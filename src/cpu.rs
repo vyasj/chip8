@@ -1,50 +1,13 @@
-pub struct CPU {
+pub struct Memory {
     pub ram: Vec<u8>,
-    pub stack: Vec<u16>,
-    pub pc: u16,
-    pub ir: u16,
-    pub v0: u8,
-    pub v1: u8,
-    pub v2: u8,
-    pub v3: u8,
-    pub v4: u8,
-    pub v5: u8,
-    pub v6: u8,
-    pub v7: u8,
-    pub v8: u8,
-    pub v9: u8,
-    pub va: u8,
-    pub vb: u8,
-    pub vc: u8,
-    pub vd: u8,
-    pub ve: u8,
-    pub vf: u8
+    pub stack: Vec<u16>
 }
 
-impl CPU {
-    pub fn init() -> CPU {
-        let ret = CPU {
-            ram: vec![0x00; 4096],
-            stack: vec![0x0000; 16],
-            pc: 0x0000,
-            ir: 0x0000,
-            v0: 0x00,
-            v1: 0x00,
-            v2: 0x00,
-            v3: 0x00,
-            v4: 0x00,
-            v5: 0x00,
-            v6: 0x00,
-            v7: 0x00,
-            v8: 0x00,
-            v9: 0x00,
-            va: 0x00,
-            vb: 0x00,
-            vc: 0x00,
-            vd: 0x00,
-            ve: 0x00,
-            vf: 0x00
-
+impl Memory {
+    pub fn init() -> Memory {
+        let ret = Memory {
+            ram: vec![0; 4096],
+            stack: vec![0; 16]
         };
 
         ret
