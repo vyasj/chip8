@@ -6,8 +6,8 @@ pub struct Memory {
 impl Memory {
     pub fn init() -> Memory {
         let ret = Memory {
-            ram: vec![0; 4096],
-            stack: vec![0; 16]
+            ram: vec![0x00; 4096],
+            stack: vec![0x0000; 16]
         };
 
         ret
