@@ -18,5 +18,6 @@ pub struct Registers {
     pub ve: u8,
     pub vf: u8,
     pub st: u8,
-    pub dt: u8
+    pub dt: u8,
+    pub sp: u8
 }

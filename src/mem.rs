@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::io::Read;
+
 pub struct Memory {
     pub ram: Vec<u8>,
     pub stack: Vec<u16>
@@ -34,5 +38,19 @@ impl Memory {
         ];
 
         self.ram[0x050..0x0A0].copy_from_slice(&font);
+    }
+
+    pub fn load_rom(&mut self, filename: &str) {
+        let mut ram_addr: usize = 0x200;
+        let mut filepath: String = String::from("./roms/");
+        filepath.push_str(filename);
+
+        let buffer = BufReader::new(File::open(filepath).unwrap());
+
+        for byte_or_error in buffer.bytes() {
+            let byte = byte_or_error.unwrap();
+            self.ram[ram_addr] = byte;
+            ram_addr = ram_addr + 1;
+        }
     }
 }

@@ -6,3 +6,5 @@ In Rust, because I hate myself! :D
 https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
 https://austinmorlan.com/posts/chip8_emulator/
 https://multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
+https://github.com/corax89/chip8-test-rom/tree/master
+https://github.com/kripod/chip8-roms
