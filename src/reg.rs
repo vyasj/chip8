@@ -1,23 +1,32 @@
+use rand::Rng;
+
 pub struct Registers {
     pub pc: u16,
     pub ir: u16,
-    pub v0: u8,
-    pub v1: u8,
-    pub v2: u8,
-    pub v3: u8,
-    pub v4: u8,
-    pub v5: u8,
-    pub v6: u8,
-    pub v7: u8,
-    pub v8: u8,
-    pub v9: u8,
-    pub va: u8,
-    pub vb: u8,
-    pub vc: u8,
-    pub vd: u8,
-    pub ve: u8,
-    pub vf: u8,
+    pub vx: Vec<u8>,
     pub st: u8,
     pub dt: u8,
     pub sp: u8
+}
+
+impl Registers {
+    pub fn init() -> Registers {
+        let ret = Registers {
+            pc: 0x200,
+            ir: 0,
+            vx: vec![0; 16],
+            st: 60,
+            dt: 60,
+            sp: 0
+        };
+
+        ret
+    }
+
+    pub fn gen_random(self) -> u8 {
+        let mut rng = rand::rng();
+        let num: u8 = rng.random_range(0..=255);
+
+        num
+    }
 }
