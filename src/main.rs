@@ -162,8 +162,21 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let display = Display::init();
+        let mut display = Display::init();
 
-        //
+        let screen_copy: Vec<u8> = vec![0; 2048];
+
+        display.screen[0..32].fill(1);
+
+        let mut exp_result: Vec<u8> = vec![0; 2048];
+        exp_result[0..32].fill(1);
+
+        let result: Vec<u8> = display.screen
+            .iter()
+            .zip(screen_copy.iter())
+            .map(|(&x1, &x2)| x1 ^ x2)
+            .collect();
+
+        assert_eq!(exp_result, result);
     }
 }
