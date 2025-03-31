@@ -91,8 +91,54 @@ fn main() -> Result<(), Error> {
             },
 
             Event::MainEventsCleared => {
-                display.update();
-                window.request_redraw();
+                let n1: u8 = memory.ram[registers.pc as usize];
+                registers.pc = registers.pc + 1;
+                let n2: u8 = memory.ram[registers.pc as usize];
+                registers.pc = registers.pc + 1;
+
+                let opcode: u16 = ((n1 as u16) << 8) | n2 as u16;
+                let nibble1: u16 = 0xF000 & opcode;
+                let nibblex: u16 = 0x0F00 & opcode;
+                let nibbley: u16 = 0x00F0 & opcode;
+                let nibbleN: u16 = 0x000F & opcode;
+                let nibbleNN: u16 = 0x00FF & opcode;
+                let nibbleNNN: u16 = 0x0FFF & opcode;
+
+                if nibble1 == 0x0000 {
+                    println!("special subroutine call, very serious stuff. kill yourself.");
+                }
+
+                if opcode == 0x00E0 {
+                    // clear screen
+                    for x in &mut display.screen {
+                        *x = 0;
+                    }
+                } else if nibble1 == 0x1000 {
+                    // jump
+                    registers.pc = nibbleNNN;
+                } else if nibble1 == 0x6000 {
+                    // set register vx
+                    let reg_num = (nibblex >> 8) as usize;
+                    let val = nibbleNN as u8;
+                    registers.vx[reg_num] = val;
+                } else if nibble1 == 0x7000 {
+                    // add value to register vx
+                    let reg_num = (nibblex >> 8) as usize;
+                    let val = nibbleNN as u8;
+                    registers.vx[reg_num] = registers.vx[reg_num] + val;
+                } else if nibble1 == 0xA000 {
+                    // set index register
+                    registers.ir = nibbleNNN;
+                } else if nibble1 == 0xD000 {
+                    // draw
+                    let x_coord = registers.vx[(nibblex >> 8) as usize] & 63;
+                    let y_coord = registers.vx[(nibbley >> 8) as usize] & 32;
+                    registers.vx[0x0F] = 0;
+                    let n_pixels = nibbleN;
+
+                    display.update();
+                    window.request_redraw();
+                }
             }
 
             Event::RedrawRequested(_) => {
@@ -177,6 +223,23 @@ mod tests {
             .map(|(&x1, &x2)| x1 ^ x2)
             .collect();
 
+        assert_eq!(exp_result, result);
+    }
+
+    #[test]
+    fn test_bit_shit() {
+        let num: u16 = 0x70FB;
+
+        let exp_result: Vec<u8> = vec![0x70, 0xFB];
+
+        // testing to_be_bytes()
+        // let result = num.to_be_bytes();
+
+        // testing as keyword
+        let first: u8 = (num >> 8) as u8;
+        let second: u8 = num as u8;
+        let result = vec![first, second];
+        
         assert_eq!(exp_result, result);
     }
 }

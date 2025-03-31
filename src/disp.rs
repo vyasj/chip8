@@ -16,17 +16,7 @@ impl Display {
 	}
 
 	pub fn update(&mut self) {
-		let mut idx: usize = 0;
-		while self.screen[idx] == 0 {
-			idx = idx + 1;
-
-			if idx >= self.screen.len() {
-				idx = 0;
-				self.screen[idx] = 1;
-			}
-		}
-		self.screen[idx] = 0;
-		self.screen[idx+1] = 1;
+		//
 	}
 
 	pub fn draw(&self, frame: &mut [u8]) {
