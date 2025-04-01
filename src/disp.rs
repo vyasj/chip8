@@ -24,15 +24,15 @@ impl Display {
         ir: u16,
         ram: &Vec<u8>,
     ) {
-    	let mut counter_x = x;
-    	let mut counter_y = y;
+    	let mut counter_x: usize = x as usize;
+    	let mut counter_y: usize = y as usize;
 
         for i in 0..n {
             let sprite_byte: u8 = ram[(ir + i) as usize];
 
             for j in 0..8 {
                 if (sprite_byte << j) & 0x80 > 0 {
-                    let screen_idx: usize = ((counter_y as usize) * (self.width as usize)) + (counter_x as usize);
+                    let screen_idx: usize = (counter_y * (self.width as usize)) + counter_x;
                     if self.screen[screen_idx] == true {
                         vx[0xF] = 1;
                     } else {
@@ -40,7 +40,7 @@ impl Display {
                     }
 
                     if counter_x % 64 == 0 {
-                    	counter_x = x;
+                    	counter_x = x as usize;
                         break;
                     } else {
                         counter_x = counter_x + 1;
@@ -51,7 +51,7 @@ impl Display {
             counter_y = counter_y + 1;
 
             if counter_y % 32 == 0 {
-            	counter_y = y;
+            	counter_y = y as usize;
                 break;
             }
         }

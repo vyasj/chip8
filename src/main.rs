@@ -103,13 +103,13 @@ fn main() -> Result<(), Error> {
                 let digit3: u16 = ((0x00F0 & opcode) >> 4);
                 let digit4: u16 = (0x000F & opcode);
 
-                println!(
-                    "{:#x}: ({:#x}, {:#x}, {:#x}, {:#x})",
-                    opcode, digit1, digit2, digit3, digit4
-                );
+                //println!(
+                //    "{:#x}: ({:#x}, {:#x}, {:#x}, {:#x})",
+                //     opcode, digit1, digit2, digit3, digit4
+                //);
 
                 match (digit1, digit2, digit3, digit4) {
-                    (0, 0, 0, 0) => {
+                    (0, _, _, _) => {
                         println!(
                             "{:#x}: special subroutine call, very serious stuff.",
                             opcode
@@ -123,24 +123,24 @@ fn main() -> Result<(), Error> {
                     }
                     // JP NNN
                     (0x1, _, _, _) => {
-                        registers.pc = (digit2 << 8) | digit3 | digit4;
+                        registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
                     }
                     // VX = NN
                     (0x6, _, _, _) => {
                         let reg_num = digit2 as usize;
-                        let val = (digit3 | digit4) as u8;
+                        let val = ((digit3 << 4) | digit4) as u8;
                         registers.vx[reg_num] = val;
                     }
                     // VX + NN
                     (0x7, _, _, _) => {
                         let reg_num = digit2 as usize;
-                        let val = (digit3 | digit4) as u8;
+                        let val = ((digit3 << 4) | digit4) as u8;
                         registers.vx[reg_num] = registers.vx[reg_num] + val;
                     }
                     // IR = NNN
                     (0xA, _, _, _) => {
                         // set index register
-                        registers.ir = (digit2 << 8) | digit3 | digit4;
+                        registers.ir = (digit2 << 8) | (digit3 << 4) | digit4;
                     }
                     // DRAW
                     (0xD, _, _, _) => {
