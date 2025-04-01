@@ -147,7 +147,7 @@ fn main() -> Result<(), Error> {
                         let x_coord: u8 = registers.vx[digit2 as usize];
                         let y_coord: u8 = registers.vx[digit3 as usize];
                         registers.vx[0xF] = 0;
-                        let n_pixels: u16 = digit4 as u16;
+                        let n_pixels: u16 = digit4;
 
                         display.update(
                             x_coord,
