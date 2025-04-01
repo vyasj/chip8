@@ -4,11 +4,11 @@ use tao::dpi::LogicalSize;
 use tao::event::{Event, KeyEvent, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoop};
 use tao::keyboard::KeyCode;
-use tao::window::WindowBuilder;
 use tao::platform::unix::WindowExtUnix as _;
+use tao::window::WindowBuilder;
 
-use chip8::mem::Memory;
 use chip8::disp::Display;
+use chip8::mem::Memory;
 use chip8::reg::Registers;
 
 use std::env;
@@ -40,7 +40,7 @@ fn main() -> Result<(), Error> {
     let window = {
         let size = LogicalSize::new(display.width as f64, display.height as f64);
         let window = WindowBuilder::new()
-            .with_title("CHIP-8 bullshit")
+            .with_title("CHIP-8 shenanigans")
             .with_inner_size(size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -50,7 +50,8 @@ fn main() -> Result<(), Error> {
 
     let mut pixels = {
         let window_size = window.inner_size();
-        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, Arc::clone(&window));
+        let surface_texture =
+            SurfaceTexture::new(window_size.width, window_size.height, Arc::clone(&window));
         Pixels::new(display.width as u32, display.height as u32, surface_texture)?
     };
 
@@ -97,47 +98,70 @@ fn main() -> Result<(), Error> {
                 registers.pc = registers.pc + 1;
 
                 let opcode: u16 = ((n1 as u16) << 8) | n2 as u16;
-                let nibble1: u16 = 0xF000 & opcode;
-                let nibblex: u16 = 0x0F00 & opcode;
-                let nibbley: u16 = 0x00F0 & opcode;
-                let nibbleN: u16 = 0x000F & opcode;
-                let nibbleNN: u16 = 0x00FF & opcode;
-                let nibbleNNN: u16 = 0x0FFF & opcode;
+                let digit1: u16 = ((0xF000 & opcode) >> 12);
+                let digit2: u16 = ((0x0F00 & opcode) >> 8);
+                let digit3: u16 = ((0x00F0 & opcode) >> 4);
+                let digit4: u16 = (0x000F & opcode);
 
-                if nibble1 == 0x0000 {
-                    println!("special subroutine call, very serious stuff. kill yourself.");
-                }
+                println!(
+                    "{:#x}: ({:#x}, {:#x}, {:#x}, {:#x})",
+                    opcode, digit1, digit2, digit3, digit4
+                );
 
-                if opcode == 0x00E0 {
-                    // clear screen
-                    for x in &mut display.screen {
-                        *x = 0;
+                match (digit1, digit2, digit3, digit4) {
+                    (0, 0, 0, 0) => {
+                        println!(
+                            "{:#x}: special subroutine call, very serious stuff.",
+                            opcode
+                        );
                     }
-                } else if nibble1 == 0x1000 {
-                    // jump
-                    registers.pc = nibbleNNN;
-                } else if nibble1 == 0x6000 {
-                    // set register vx
-                    let reg_num = (nibblex >> 8) as usize;
-                    let val = nibbleNN as u8;
-                    registers.vx[reg_num] = val;
-                } else if nibble1 == 0x7000 {
-                    // add value to register vx
-                    let reg_num = (nibblex >> 8) as usize;
-                    let val = nibbleNN as u8;
-                    registers.vx[reg_num] = registers.vx[reg_num] + val;
-                } else if nibble1 == 0xA000 {
-                    // set index register
-                    registers.ir = nibbleNNN;
-                } else if nibble1 == 0xD000 {
-                    // draw
-                    let x_coord = registers.vx[(nibblex >> 8) as usize] & 63;
-                    let y_coord = registers.vx[(nibbley >> 8) as usize] & 32;
-                    registers.vx[0x0F] = 0;
-                    let n_pixels = nibbleN;
+                    // CLS
+                    (0, 0, 0xE, 0) => {
+                        for x in &mut display.screen {
+                            *x = false;
+                        }
+                    }
+                    // JP NNN
+                    (0x1, _, _, _) => {
+                        registers.pc = (digit2 << 8) | digit3 | digit4;
+                    }
+                    // VX = NN
+                    (0x6, _, _, _) => {
+                        let reg_num = digit2 as usize;
+                        let val = (digit3 | digit4) as u8;
+                        registers.vx[reg_num] = val;
+                    }
+                    // VX + NN
+                    (0x7, _, _, _) => {
+                        let reg_num = digit2 as usize;
+                        let val = (digit3 | digit4) as u8;
+                        registers.vx[reg_num] = registers.vx[reg_num] + val;
+                    }
+                    // IR = NNN
+                    (0xA, _, _, _) => {
+                        // set index register
+                        registers.ir = (digit2 << 8) | digit3 | digit4;
+                    }
+                    // DRAW
+                    (0xD, _, _, _) => {
+                        let x_coord: u8 = registers.vx[digit2 as usize];
+                        let y_coord: u8 = registers.vx[digit3 as usize];
+                        registers.vx[0xF] = 0;
+                        let n_pixels: u16 = digit4 as u16;
 
-                    display.update();
-                    window.request_redraw();
+                        display.update(
+                            x_coord,
+                            y_coord,
+                            n_pixels,
+                            &mut registers.vx,
+                            registers.ir,
+                            &memory.ram,
+                        );
+                        window.request_redraw();
+                    }
+                    _ => {
+                        println!("fuck");
+                    }
                 }
             }
 
@@ -158,10 +182,7 @@ fn main() -> Result<(), Error> {
             }
         }
     });
-
-    Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -188,7 +209,7 @@ mod tests {
             0xF0, 0x80, 0x80, 0x80, 0xF0, // C
             0xE0, 0x90, 0x90, 0x90, 0xE0, // D
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F
         ];
 
         assert_eq!(memory.ram[0x050..0x0A0], exp_result);
@@ -210,36 +231,20 @@ mod tests {
     fn test_display() {
         let mut display = Display::init();
 
-        let screen_copy: Vec<u8> = vec![0; 2048];
+        let screen_copy: Vec<bool> = vec![false; 2048];
 
-        display.screen[0..32].fill(1);
+        display.screen[0..32].fill(true);
 
-        let mut exp_result: Vec<u8> = vec![0; 2048];
-        exp_result[0..32].fill(1);
+        let mut exp_result: Vec<bool> = vec![false; 2048];
+        exp_result[0..32].fill(true);
 
-        let result: Vec<u8> = display.screen
+        let result: Vec<bool> = display
+            .screen
             .iter()
             .zip(screen_copy.iter())
             .map(|(&x1, &x2)| x1 ^ x2)
             .collect();
 
-        assert_eq!(exp_result, result);
-    }
-
-    #[test]
-    fn test_bit_shit() {
-        let num: u16 = 0x70FB;
-
-        let exp_result: Vec<u8> = vec![0x70, 0xFB];
-
-        // testing to_be_bytes()
-        // let result = num.to_be_bytes();
-
-        // testing as keyword
-        let first: u8 = (num >> 8) as u8;
-        let second: u8 = num as u8;
-        let result = vec![first, second];
-        
         assert_eq!(exp_result, result);
     }
 }

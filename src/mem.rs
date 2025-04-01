@@ -4,14 +4,14 @@ use std::io::Read;
 
 pub struct Memory {
     pub ram: Vec<u8>,
-    pub stack: Vec<u16>
+    pub stack: Vec<u16>,
 }
 
 impl Memory {
     pub fn init() -> Memory {
         let ret = Memory {
             ram: vec![0x00; 4096],
-            stack: vec![0x0000; 16]
+            stack: vec![0x0000; 16],
         };
 
         ret
@@ -34,7 +34,7 @@ impl Memory {
             0xF0, 0x80, 0x80, 0x80, 0xF0, // C
             0xE0, 0x90, 0x90, 0x90, 0xE0, // D
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+            0xF0, 0x80, 0xF0, 0x80, 0x80, // F
         ];
 
         self.ram[0x050..0x0A0].copy_from_slice(&font);

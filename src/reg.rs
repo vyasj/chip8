@@ -6,7 +6,7 @@ pub struct Registers {
     pub vx: Vec<u8>,
     pub st: u8,
     pub dt: u8,
-    pub sp: u8
+    pub sp: u8,
 }
 
 impl Registers {
@@ -17,7 +17,7 @@ impl Registers {
             vx: vec![0; 16],
             st: 60,
             dt: 60,
-            sp: 0
+            sp: 0,
         };
 
         ret
