@@ -92,10 +92,15 @@ fn main() -> Result<(), Error> {
             },
 
             Event::MainEventsCleared => {
+                if registers.pc as usize == memory.ram.len() {
+                    println!("reached end of ram. exiting.");
+                    return;
+                }
+
                 let n1: u8 = memory.ram[registers.pc as usize];
-                registers.pc = registers.pc + 1;
+                registers.pc += 1;
                 let n2: u8 = memory.ram[registers.pc as usize];
-                registers.pc = registers.pc + 1;
+                registers.pc += 1;
 
                 let opcode: u16 = ((n1 as u16) << 8) | n2 as u16;
                 let digit1: u16 = ((0xF000 & opcode) >> 12);
@@ -103,45 +108,139 @@ fn main() -> Result<(), Error> {
                 let digit3: u16 = ((0x00F0 & opcode) >> 4);
                 let digit4: u16 = (0x000F & opcode);
 
-                //println!(
-                //    "{:#x}: ({:#x}, {:#x}, {:#x}, {:#x})",
-                //     opcode, digit1, digit2, digit3, digit4
-                //);
-
                 match (digit1, digit2, digit3, digit4) {
-                    (0, _, _, _) => {
-                        println!(
-                            "{:#x}: special subroutine call, very serious stuff.",
-                            opcode
-                        );
-                    }
                     // CLS
                     (0, 0, 0xE, 0) => {
                         for x in &mut display.screen {
                             *x = false;
                         }
-                    }
+                    },
+                    // RET
+                    (0, 0, 0xE, 0xE) => {
+                        registers.pc = memory.stack.pop().unwrap();
+                        registers.sp -= 1;
+                    },
+                    // SYS NNN
+                    (0, _, _, _) => {
+                        println!("subroutine call: {:#x} is not implemented because it is a special subroutine call for the physical device.", opcode);
+                    },
                     // JP NNN
                     (0x1, _, _, _) => {
                         registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
-                    }
-                    // VX = NN
+                    },
+                    // CALL NNN
+                    (0x2, _, _, _) => {
+                        registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
+                    },
+                    // SE Vx, kk
+                    (0x3, _, _, _) => {
+                        if digit2 == ((digit3 << 4) | digit4) {
+                            registers.pc += 2;
+                        }
+                    },
+                    // SNE Vx, kk
+                    (0x4, _, _, _) => {
+                        if digit2 != ((digit3 << 4) | digit4) {
+                            registers.pc += 2;
+                        }
+                    },
+                    // SE Vx, Vy
+                    (0x5, _, _, ) => {
+                        if registers.vx[digit2 as usize] == registers.vx[digit3 as usize] {
+                            registers.pc += 2;
+                        }
+                    },
+                    // LD Vx, kk
                     (0x6, _, _, _) => {
-                        let reg_num = digit2 as usize;
-                        let val = ((digit3 << 4) | digit4) as u8;
-                        registers.vx[reg_num] = val;
-                    }
-                    // VX + NN
+                        registers.vx[digit2 as usize] = ((digit3 << 4) | digit4) as u8;
+                    },
+                    // ADD Vx, kk
                     (0x7, _, _, _) => {
-                        let reg_num = digit2 as usize;
-                        let val = ((digit3 << 4) | digit4) as u8;
-                        registers.vx[reg_num] = registers.vx[reg_num] + val;
-                    }
-                    // IR = NNN
+                        registers.vx[digit2 as usize] += ((digit3 << 4) | digit4) as u8;
+                    },
+                    // LD Vx, Vy
+                    (0x8, _, _, 0) => {
+                        registers.vx[digit2 as usize] = registers.vx[digit3 as usize];
+                    },
+                    // OR Vx, Vy
+                    (0x8, _, _, 0x1) => {
+                        registers.vx[digit2 as usize] |= registers.vx[digit3 as usize];
+                    },
+                    // AND Vx, Vy
+                    (0x8, _, _, 0x2) => {
+                        registers.vx[digit2 as usize] &= registers.vx[digit3 as usize];
+                    },
+                    // XOR Vx, Vy
+                    (0x8, _, _, 0x3) => {
+                        registers.vx[digit2 as usize] ^= registers.vx[digit3 as usize];
+                    },
+                    // ADD Vx, Vy
+                    (0x8, _, _, 0x4) => {
+                        let sum: u16 = (registers.vx[digit2 as usize] as u16) + (registers.vx[digit3 as usize] as u16);
+                        if sum > 255 {
+                            registers.vx[0xF] = 1;
+                        } else {
+                            registers.vx[0xF] = 0;
+                        }
+                        registers.vx[digit2 as usize] = sum as u8;
+                    },
+                    // SUB Vx, Vy
+                    (0x8, _, _, 0x5) => {
+                        if registers.vx[digit2 as usize] >= registers.vx[digit3 as usize] {
+                            registers.vx[0xF] = 1;
+                            registers.vx[digit2 as usize] -= registers.vx[digit3 as usize];
+                        } else {
+                            registers.vx[0xF] = 0;
+                            registers.vx[digit2 as usize] = registers.vx[digit3 as usize] - registers.vx[digit2 as usize];
+                        }
+                    },
+                    // SHR Vx {, Vy}
+                    (0x8, _, _, 0x6) => {
+                        // This instruction behaves differently depending on the architecture of the device running the interpreter
+                        if registers.vx[digit2 as usize].trailing_ones() > 0 {
+                            registers.vx[0xF] = 1;
+                        } else {
+                            registers.vx[0xF] = 0;
+                        }
+                        registers.vx[digit2 as usize] /= 2;
+                    },
+                    // SUBN Vx, Vy
+                    (0x8, _, _, 0x7) => {
+                        if registers.vx[digit3 as usize] >= registers.vx[digit2 as usize] {
+                            registers.vx[0xF] = 1;
+                            registers.vx[digit3 as usize] -= registers.vx[digit2 as usize];
+                        } else {
+                            registers.vx[0xF] = 0;
+                            registers.vx[digit3 as usize] = registers.vx[digit2 as usize] - registers.vx[digit3 as usize];
+                        }
+                    },
+                    // SHL Vx {, Vy}
+                    (0x8, _, _, 0xE) => {
+                        if registers.vx[digit2 as usize].trailing_ones() > 0 {
+                            registers.vx[0xF] = 1;
+                        } else {
+                            registers.vx[0xF] = 0;
+                        }
+                        registers.vx[digit2 as usize] *= 2;
+                    },
+                    // SNE, Vx, Vy
+                    (0x9, _, _, 0) => {
+                        if registers.vx[digit2 as usize] != registers.vx[digit3 as usize] {
+                            registers.pc += 2;
+                        }
+                    },
+                    // LD IR, NNN
                     (0xA, _, _, _) => {
-                        // set index register
                         registers.ir = (digit2 << 8) | (digit3 << 4) | digit4;
-                    }
+                    },
+                    // JP, V0 + NNN
+                    (0xB, _, _, _) => {
+                        registers.pc = registers.vx[0] + ((digit2 << 8) | (digit3 << 4) | digit4);
+                    },
+                    // RND Vx, kk
+                    (0xC, _, _, _) => {
+                        registers.vx[digit2 as usize] = registers.gen_random() & ((digit3 << 4) | digit4);
+                    },
                     // DRAW
                     (0xD, _, _, _) => {
                         let x_coord: u8 = registers.vx[digit2 as usize];
@@ -158,10 +257,13 @@ fn main() -> Result<(), Error> {
                             &memory.ram,
                         );
                         window.request_redraw();
-                    }
-                    _ => {
-                        println!("fuck");
-                    }
+                    },
+                    // SKP Vx
+                    (0xE, _ 0x9, 0xE) => {
+                        //
+                    },
+                    0xF => {},
+                    _ => {}
                 }
             }
 
