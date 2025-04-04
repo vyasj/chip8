@@ -79,7 +79,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     *control_flow = ControlFlow::Exit;
-                }
+                },
 
                 WindowEvent::Resized(size) => {
                     if let Err(err) = pixels.resize_surface(size.width, size.height) {
@@ -93,7 +93,7 @@ fn main() -> Result<(), Error> {
 
             Event::MainEventsCleared => {
                 if registers.pc as usize == memory.ram.len() {
-                    println!("reached end of ram. exiting.");
+                    println!("reached end of ram.");
                     return;
                 }
 
@@ -145,7 +145,7 @@ fn main() -> Result<(), Error> {
                         }
                     },
                     // SE Vx, Vy
-                    (0x5, _, _, ) => {
+                    (0x5, _, _, 0) => {
                         if registers.vx[digit2 as usize] == registers.vx[digit3 as usize] {
                             registers.pc += 2;
                         }
@@ -235,11 +235,11 @@ fn main() -> Result<(), Error> {
                     },
                     // JP, V0 + NNN
                     (0xB, _, _, _) => {
-                        registers.pc = registers.vx[0] + ((digit2 << 8) | (digit3 << 4) | digit4);
+                        registers.pc = (registers.vx[0] as u16) + ((digit2 << 8) | (digit3 << 4) | digit4);
                     },
                     // RND Vx, kk
                     (0xC, _, _, _) => {
-                        registers.vx[digit2 as usize] = registers.gen_random() & ((digit3 << 4) | digit4);
+                        registers.vx[digit2 as usize] = registers.gen_random() & (((digit3 << 4) | digit4) as u8 );
                     },
                     // DRAW
                     (0xD, _, _, _) => {
@@ -259,10 +259,10 @@ fn main() -> Result<(), Error> {
                         window.request_redraw();
                     },
                     // SKP Vx
-                    (0xE, _ 0x9, 0xE) => {
+                    (0xE, _, 0x9, 0xE) => {
                         //
                     },
-                    0xF => {},
+                    (0xF, _, _, _) => {},
                     _ => {}
                 }
             }

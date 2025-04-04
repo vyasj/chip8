@@ -7,6 +7,7 @@ pub struct Registers {
     pub st: u8,
     pub dt: u8,
     pub sp: u8,
+    pub kp: Vec<bool>,
 }
 
 impl Registers {
@@ -18,12 +19,13 @@ impl Registers {
             st: 60,
             dt: 60,
             sp: 0,
+            kp: vec![false; 16],
         };
 
         ret
     }
 
-    pub fn gen_random(self) -> u8 {
+    pub fn gen_random(&self) -> u8 {
         let mut rng = rand::rng();
         let num: u8 = rng.random_range(0..=255);
 
