@@ -1,7 +1,7 @@
 use muda::{Menu, MenuEvent, Submenu};
 use pixels::{Error, Pixels, SurfaceTexture};
 use tao::dpi::LogicalSize;
-use tao::event::{Event, KeyEvent, WindowEvent};
+use tao::event::{Event, KeyEvent, WindowEvent, ElementState};
 use tao::event_loop::{ControlFlow, EventLoop};
 use tao::keyboard::KeyCode;
 use tao::platform::unix::WindowExtUnix as _;
@@ -57,7 +57,6 @@ fn main() -> Result<(), Error> {
 
     let menu = Menu::new();
 
-    use tao::platform::unix::WindowExtUnix as _;
     let file_menu = Submenu::new("File", true);
     menu.append(&file_menu).unwrap();
     file_menu
@@ -65,6 +64,8 @@ fn main() -> Result<(), Error> {
         .unwrap();
     menu.init_for_gtk_window(window.gtk_window(), window.default_vbox())
         .unwrap();
+
+    let mut debug_mode = false;
 
     event_loop.run(move |event, _, control_flow| {
         match event {
@@ -81,32 +82,282 @@ fn main() -> Result<(), Error> {
                     *control_flow = ControlFlow::Exit;
                 },
 
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::Digit1,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x1] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::Digit2,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x2] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::Digit3,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x3] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::Digit4,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xC] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyQ,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x4] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyW,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x5] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyE,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x6] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyR,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xD] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyA,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x7] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyS,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x8] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyD,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0x9] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyF,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xE] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyZ,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xA] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyX,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyC,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xB] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyV,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    registers.kp[0xF] = true;
+                    debug_mode = false;
+                    *control_flow = ControlFlow::Poll;
+                },
+
                 WindowEvent::Resized(size) => {
                     if let Err(err) = pixels.resize_surface(size.width, size.height) {
                         println!("{}", err);
                         *control_flow = ControlFlow::Exit;
                     }
-                }
+                },
 
-                _ => {}
+                WindowEvent::KeyboardInput {
+                    event:
+                        KeyEvent {
+                            physical_key: KeyCode::KeyJ,
+                            state: ElementState::Pressed,
+                            ..
+                        },
+                    ..
+                } => {
+                    if !debug_mode {
+                        println!("entering debug mode. press any other key to continue.");
+                    }
+                    debug_mode = true;
+                    *control_flow = ControlFlow::Wait;
+                },
+
+                _ => {
+                    //
+                }
             },
 
             Event::MainEventsCleared => {
+                if debug_mode {
+                    println!("stack:");
+                    for idx in 0..memory.stack.len() {
+                        print!("|{}", memory.stack[idx]);
+                    }
+                    print!("|");
+                    println!("\n");
+                }
+
                 if registers.pc as usize == memory.ram.len() {
                     println!("reached end of ram.");
                     return;
                 }
 
                 let n1: u8 = memory.ram[registers.pc as usize];
-                registers.pc += 1;
-                let n2: u8 = memory.ram[registers.pc as usize];
-                registers.pc += 1;
+                let n2: u8 = memory.ram[(registers.pc + 1) as usize];
+                registers.pc += 2;
 
                 let opcode: u16 = ((n1 as u16) << 8) | n2 as u16;
-                let digit1: u16 = ((0xF000 & opcode) >> 12);
-                let digit2: u16 = ((0x0F00 & opcode) >> 8);
-                let digit3: u16 = ((0x00F0 & opcode) >> 4);
-                let digit4: u16 = (0x000F & opcode);
+                let digit1: u16 = (0xF000 & opcode) >> 12;
+                let digit2: u16 = (0x0F00 & opcode) >> 8;
+                let digit3: u16 = (0x00F0 & opcode) >> 4;
+                let digit4: u16 = 0x000F & opcode;
 
                 match (digit1, digit2, digit3, digit4) {
                     // CLS
@@ -117,12 +368,17 @@ fn main() -> Result<(), Error> {
                     },
                     // RET
                     (0, 0, 0xE, 0xE) => {
-                        registers.pc = memory.stack.pop().unwrap();
+                        let idx = memory.stack.iter().rev().position(|&x| x != 0);
+                        if idx.is_some() {
+                            registers.pc = (idx.unwrap() as u16) + 1;
+                        } else {
+                            println!("error: no nonzero value found on the stack.")
+                        }
                         registers.sp -= 1;
                     },
                     // SYS NNN
                     (0, _, _, _) => {
-                        println!("subroutine call: {:#x} is not implemented because it is a special subroutine call for the physical device.", opcode);
+                        //println!("subroutine call: {:#x} is not implemented because it is a special subroutine call for the physical device.", opcode);
                     },
                     // JP NNN
                     (0x1, _, _, _) => {
@@ -130,6 +386,8 @@ fn main() -> Result<(), Error> {
                     },
                     // CALL NNN
                     (0x2, _, _, _) => {
+                        registers.sp += 1;
+                        memory.stack[(registers.sp as usize) - 1] = registers.pc;
                         registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
                     },
                     // SE Vx, kk
@@ -260,12 +518,84 @@ fn main() -> Result<(), Error> {
                     },
                     // SKP Vx
                     (0xE, _, 0x9, 0xE) => {
-                        //
+                        let key = registers.vx[digit2 as usize];
+                        if registers.kp[key as usize] {
+                            registers.pc += 1;
+                        }
                     },
-                    (0xF, _, _, _) => {},
-                    _ => {}
+                    // SKNP Vx
+                    (0xE, _, 0xA, 0x1) => {
+                        let key = registers.vx[digit2 as usize];
+                        if !registers.kp[key as usize] {
+                            registers.pc += 1;
+                        }
+                    },
+                    // LD, Vx, DT
+                    (0xF, _, 0, 0x7) => {
+                        registers.vx[digit2 as usize] = registers.dt;
+                    },
+                    // LD, Vx, K
+                    (0xF, _, 0, 0xA) => {
+                        let key_pos = registers.kp.iter().position(|&x| x == true);
+                        if key_pos.is_some() {
+                            registers.vx[digit2 as usize] = key_pos.unwrap() as u8;
+                        } else {
+                            *control_flow = ControlFlow::Wait;
+                        }
+                    },
+                    // LD DT, Vx
+                    (0xF, _, 0x1, 0x5) => {
+                        registers.dt = registers.vx[digit2 as usize];
+                    },
+                    // LD ST, Vx
+                    (0xF, _, 0x1, 0x8) => {
+                        registers.st = registers.vx[digit2 as usize];
+                    },
+                    // ADD IR, Vx
+                    (0xF, _, 0x1, 0xE) => {
+                        registers.ir += registers.vx[digit2 as usize] as u16;
+                    },
+                    // LD F, Vx
+                    (0xF, _, 0x2, 0x9) => {
+                        registers.ir = (digit2 as u16) * 5;
+                    },
+                    // LD B, Vx
+                    (0xF, _, 0x3, 0x3) => {
+                        let addr = registers.ir as usize;
+                        let mut num = registers.vx[digit2 as usize];
+                        memory.ram[addr] = num / 100;
+                        num -= (num / 100) * 100;
+                        memory.ram[addr+1] = num / 10;
+                        num -= (num / 10) * 10;
+                        memory.ram[addr+2] = num;
+                    },
+                    // LD [I], Vx
+                    (0xF, _, 0x5, 0x5) => {
+                        let start_addr = registers.ir as usize;
+                        let slice_len = digit2 as usize;
+                        memory.ram[start_addr..(start_addr+slice_len)].copy_from_slice(&registers.vx[0..slice_len]);
+                    },
+                    // LD Vx, [I]
+                    (0xF, _, 0x6, 0x5) => {
+                        let start_addr = registers.ir as usize;
+                        let slice_len = digit2 as usize;
+                        registers.vx[0..slice_len].copy_from_slice(&memory.ram[start_addr..(start_addr+slice_len)]);
+                    }
+                    _ => {
+                        println!("Unknown opcode: {:#x}", opcode);
+                    }
                 }
-            }
+
+                if registers.dt > 0 {
+                    registers.dt -= 1;
+                }
+
+                if registers.st > 0 {
+                    registers.st -= 1;
+                }
+
+                registers.kp = vec![false; 16];
+            },
 
             Event::RedrawRequested(_) => {
                 display.draw(pixels.frame_mut());
@@ -273,7 +603,7 @@ fn main() -> Result<(), Error> {
                     println!("{}", err);
                     *control_flow = ControlFlow::Exit;
                 }
-            }
+            },
 
             _ => {
                 if let Ok(event) = MenuEvent::receiver().try_recv() {

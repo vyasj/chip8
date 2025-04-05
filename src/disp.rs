@@ -38,7 +38,7 @@ impl Display {
         for (idx, pixel) in frame.chunks_exact_mut(4).enumerate() {
             let pixel_on = self.screen[idx];
 
-            let rgba = if pixel_on {
+            let rgba = if !pixel_on {
                 [0x00, 0x00, 0x00, 0xFF]
             } else {
                 [0xFF, 0xFF, 0xFF, 0xFF]
