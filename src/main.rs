@@ -547,20 +547,19 @@ fn main() -> Result<(), Error> {
                     // LD B, Vx
                     (0xF, _, 0x3, 0x3) => {
                         let start_addr = registers.ir as usize;
-                        let num = registers.vx[digit2 as usize];
-                        memory.ram[start_addr + 2] = num % 10;
-                        memory.ram[start_addr + 1] = ((num - memory.ram[start_addr + 2]) % 100) / 10;
-                        memory.ram[start_addr] = (num - memory.ram[start_addr + 2] - (memory.ram[start_addr + 1] * 10)) / 100;
+                        memory.ram[start_addr] = registers.vx[digit2 as usize] / 100;
+                        memory.ram[start_addr + 1] = (registers.vx[digit2 as usize] % 100) / 10;
+                        memory.ram[start_addr + 2] = registers.vx[digit2 as usize] % 10;
                     },
                     // LD [I], Vx
                     (0xF, _, 0x5, 0x5) => {
                         let start_addr = registers.ir as usize;
-                        memory.ram[start_addr..(start_addr+(digit2 as usize))].copy_from_slice(&registers.vx[0..(digit2 as usize)]);
+                        memory.ram[start_addr..=(start_addr+(digit2 as usize))].copy_from_slice(&registers.vx[0..=(digit2 as usize)]);
                     },
                     // LD Vx, [I]
                     (0xF, _, 0x6, 0x5) => {
                         let start_addr = registers.ir as usize;
-                        registers.vx[0..(digit2 as usize)].copy_from_slice(&memory.ram[start_addr..(start_addr+(digit2 as usize))]);
+                        registers.vx[0..=(digit2 as usize)].copy_from_slice(&memory.ram[start_addr..=(start_addr+(digit2 as usize))]);
                     }
                     _ => {
                         println!("Unknown opcode: {:#x}", opcode);
