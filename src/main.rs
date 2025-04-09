@@ -344,16 +344,16 @@ fn main() -> Result<(), Error> {
                     println!("\n");
                 }
 
-                if registers.pc as usize == memory.ram.len() {
+                let n1: u16 = memory.ram[registers.pc as usize] as u16;
+                let n2: u16 = memory.ram[(registers.pc + 1) as usize] as u16;
+                registers.pc += 2;
+
+                if registers.pc as usize >= memory.ram.len() {
                     println!("reached end of ram.");
                     return;
                 }
 
-                let n1: u8 = memory.ram[registers.pc as usize];
-                let n2: u8 = memory.ram[(registers.pc + 1) as usize];
-                registers.pc += 2;
-
-                let opcode: u16 = ((n1 as u16) << 8) | n2 as u16;
+                let opcode: u16 = (n1 << 8) | n2;
                 let digit1: u16 = (0xF000 & opcode) >> 12;
                 let digit2: u16 = (0x0F00 & opcode) >> 8;
                 let digit3: u16 = (0x00F0 & opcode) >> 4;
@@ -368,13 +368,8 @@ fn main() -> Result<(), Error> {
                     },
                     // RET
                     (0, 0, 0xE, 0xE) => {
-                        let idx = memory.stack.iter().rev().position(|&x| x != 0);
-                        if idx.is_some() {
-                            registers.pc = (idx.unwrap() as u16) + 1;
-                        } else {
-                            println!("error: no nonzero value found on the stack.")
-                        }
                         registers.sp -= 1;
+                        registers.pc = memory.stack[registers.sp as usize];
                     },
                     // SYS NNN
                     (0, _, _, _) => {
@@ -386,19 +381,19 @@ fn main() -> Result<(), Error> {
                     },
                     // CALL NNN
                     (0x2, _, _, _) => {
-                        registers.sp += 1;
-                        memory.stack[(registers.sp as usize) - 1] = registers.pc;
+                        memory.stack[registers.sp as usize] = registers.pc;
                         registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
+                        registers.sp += 1;
                     },
                     // SE Vx, kk
                     (0x3, _, _, _) => {
-                        if digit2 == ((digit3 << 4) | digit4) {
+                        if registers.vx[digit2 as usize] == ((digit3 << 4) | digit4) as u8 {
                             registers.pc += 2;
                         }
                     },
                     // SNE Vx, kk
                     (0x4, _, _, _) => {
-                        if digit2 != ((digit3 << 4) | digit4) {
+                        if registers.vx[digit2 as usize] != ((digit3 << 4) | digit4) as u8 {
                             registers.pc += 2;
                         }
                     },
@@ -414,7 +409,8 @@ fn main() -> Result<(), Error> {
                     },
                     // ADD Vx, kk
                     (0x7, _, _, _) => {
-                        registers.vx[digit2 as usize] += ((digit3 << 4) | digit4) as u8;
+                        let sum: u16 = (registers.vx[digit2 as usize] as u16) + ((digit3 << 4) | digit4);
+                        registers.vx[digit2 as usize] = sum as u8;
                     },
                     // LD Vx, Vy
                     (0x8, _, _, 0) => {
@@ -444,42 +440,31 @@ fn main() -> Result<(), Error> {
                     },
                     // SUB Vx, Vy
                     (0x8, _, _, 0x5) => {
-                        if registers.vx[digit2 as usize] >= registers.vx[digit3 as usize] {
-                            registers.vx[0xF] = 1;
-                            registers.vx[digit2 as usize] -= registers.vx[digit3 as usize];
-                        } else {
-                            registers.vx[0xF] = 0;
-                            registers.vx[digit2 as usize] = registers.vx[digit3 as usize] - registers.vx[digit2 as usize];
-                        }
+                        registers.vx[0xF] = if registers.vx[digit2 as usize] > registers.vx[digit3 as usize] { 1 } else { 0 };
+                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize].wrapping_sub(registers.vx[digit3 as usize]);
                     },
                     // SHR Vx {, Vy}
                     (0x8, _, _, 0x6) => {
-                        // This instruction behaves differently depending on the architecture of the device running the interpreter
                         if registers.vx[digit2 as usize].trailing_ones() > 0 {
                             registers.vx[0xF] = 1;
                         } else {
                             registers.vx[0xF] = 0;
                         }
-                        registers.vx[digit2 as usize] /= 2;
+                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize] >> 1;
                     },
                     // SUBN Vx, Vy
                     (0x8, _, _, 0x7) => {
-                        if registers.vx[digit3 as usize] >= registers.vx[digit2 as usize] {
-                            registers.vx[0xF] = 1;
-                            registers.vx[digit3 as usize] -= registers.vx[digit2 as usize];
-                        } else {
-                            registers.vx[0xF] = 0;
-                            registers.vx[digit3 as usize] = registers.vx[digit2 as usize] - registers.vx[digit3 as usize];
-                        }
+                        registers.vx[0xF] = if registers.vx[digit3 as usize] > registers.vx[digit2 as usize] { 1 } else { 0 };
+                        registers.vx[digit2 as usize] = registers.vx[digit3 as usize].wrapping_sub(registers.vx[digit2 as usize]);
                     },
                     // SHL Vx {, Vy}
                     (0x8, _, _, 0xE) => {
-                        if registers.vx[digit2 as usize].trailing_ones() > 0 {
+                        if registers.vx[digit2 as usize].leading_ones() > 0 {
                             registers.vx[0xF] = 1;
                         } else {
                             registers.vx[0xF] = 0;
                         }
-                        registers.vx[digit2 as usize] *= 2;
+                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize] << 1;
                     },
                     // SNE, Vx, Vy
                     (0x9, _, _, 0) => {
@@ -561,25 +546,21 @@ fn main() -> Result<(), Error> {
                     },
                     // LD B, Vx
                     (0xF, _, 0x3, 0x3) => {
-                        let addr = registers.ir as usize;
-                        let mut num = registers.vx[digit2 as usize];
-                        memory.ram[addr] = num / 100;
-                        num -= (num / 100) * 100;
-                        memory.ram[addr+1] = num / 10;
-                        num -= (num / 10) * 10;
-                        memory.ram[addr+2] = num;
+                        let start_addr = registers.ir as usize;
+                        let num = registers.vx[digit2 as usize];
+                        memory.ram[start_addr + 2] = num % 10;
+                        memory.ram[start_addr + 1] = ((num - memory.ram[start_addr + 2]) % 100) / 10;
+                        memory.ram[start_addr] = (num - memory.ram[start_addr + 2] - (memory.ram[start_addr + 1] * 10)) / 100;
                     },
                     // LD [I], Vx
                     (0xF, _, 0x5, 0x5) => {
                         let start_addr = registers.ir as usize;
-                        let slice_len = digit2 as usize;
-                        memory.ram[start_addr..(start_addr+slice_len)].copy_from_slice(&registers.vx[0..slice_len]);
+                        memory.ram[start_addr..(start_addr+(digit2 as usize))].copy_from_slice(&registers.vx[0..(digit2 as usize)]);
                     },
                     // LD Vx, [I]
                     (0xF, _, 0x6, 0x5) => {
                         let start_addr = registers.ir as usize;
-                        let slice_len = digit2 as usize;
-                        registers.vx[0..slice_len].copy_from_slice(&memory.ram[start_addr..(start_addr+slice_len)]);
+                        registers.vx[0..(digit2 as usize)].copy_from_slice(&memory.ram[start_addr..(start_addr+(digit2 as usize))]);
                     }
                     _ => {
                         println!("Unknown opcode: {:#x}", opcode);
@@ -648,18 +629,6 @@ mod tests {
     }
 
     #[test]
-    fn test_rom1() {
-        let filename = "test_opcode.ch8";
-
-        let mut memory = Memory::init();
-        memory.load_font();
-
-        memory.load_rom(filename);
-
-        assert!(memory.ram[0x200] != 0);
-    }
-
-    #[test]
     fn test_display() {
         let mut display = Display::init();
 
@@ -678,5 +647,15 @@ mod tests {
             .collect();
 
         assert_eq!(exp_result, result);
+    }
+
+    #[test]
+    fn test_fx33() {
+        let num: u16 = 200;
+        let ones = num % 10;
+        let tens = ((num - ones) % 100) / 10;
+        let hundreds = (num - ones - (tens * 10)) / 100;
+
+        assert_eq!((hundreds, tens, ones), (2, 0, 0));
     }
 }

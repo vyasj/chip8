@@ -1,13 +1,13 @@
 use rand::Rng;
 
 pub struct Registers {
-    pub pc: u16,
-    pub ir: u16,
-    pub vx: Vec<u8>,
-    pub st: u8,
-    pub dt: u8,
-    pub sp: u8,
-    pub kp: Vec<bool>,
+    pub pc: u16,        // program counter
+    pub ir: u16,        // index register
+    pub vx: Vec<u8>,    // V-registers
+    pub st: u8,         // sound timer
+    pub dt: u8,         // delay timer
+    pub sp: u8,         // stack pointer
+    pub kp: Vec<bool>,  // key pressed
 }
 
 impl Registers {
