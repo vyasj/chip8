@@ -335,29 +335,47 @@ fn main() -> Result<(), Error> {
             },
 
             Event::MainEventsCleared => {
-                if debug_mode {
-                    println!("stack:");
-                    for idx in 0..memory.stack.len() {
-                        print!("|{}", memory.stack[idx]);
-                    }
-                    print!("|");
-                    println!("\n");
+                if registers.pc as usize >= memory.ram.len() {
+                    println!("reached end of ram.");
+                    return;
                 }
 
                 let n1: u16 = memory.ram[registers.pc as usize] as u16;
                 let n2: u16 = memory.ram[(registers.pc + 1) as usize] as u16;
                 registers.pc += 2;
 
-                if registers.pc as usize >= memory.ram.len() {
-                    println!("reached end of ram.");
-                    return;
-                }
-
                 let opcode: u16 = (n1 << 8) | n2;
                 let digit1: u16 = (0xF000 & opcode) >> 12;
                 let digit2: u16 = (0x0F00 & opcode) >> 8;
                 let digit3: u16 = (0x00F0 & opcode) >> 4;
                 let digit4: u16 = 0x000F & opcode;
+
+                if debug_mode {
+                    println!("--------------------------------------------------");
+                    println!("program counter: {}", registers.pc);
+
+                    println!("stack pointer: {}", registers.sp);
+
+                    println!("index register: {}", registers.ir);
+
+                    print!("stack: ");
+                    for idx in 0..memory.stack.len() {
+                        print!("|{}", memory.stack[idx]);
+                    }
+                    println!("|");
+
+                    print!("v registers: ");
+                    for idx in 0..registers.vx.len() {
+                        print!("|{}", registers.vx[idx]);
+                    }
+                    println!("|");
+
+                    println!("sound timer/delay timer: {}/{}", registers.st, registers.dt);
+
+                    println!("processing opcode: {:#x}", opcode);
+
+                    println!("--------------------------------------------------");
+                }
 
                 match (digit1, digit2, digit3, digit4) {
                     // CLS

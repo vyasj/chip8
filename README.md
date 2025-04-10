@@ -2,6 +2,10 @@ CHIP-8 Emulator that I was recommended to make before attempting to make a Gameb
 
 In Rust, because I hate myself! :D
 
+## Usage
+
+Ensure that the ROM you want to run is in the `roms/` directory, either under `games/` or `tests/`. Then, simply run `cargo run path/to/game`. For example, `cargo run games/Tetris.ch8`.
+
 ## References
 - https://tobiasvl.github.io/blog/write-a-chip-8-emulator/
 - http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
