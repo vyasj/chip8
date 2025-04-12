@@ -50,7 +50,7 @@ impl Memory {
         for byte_or_error in buffer.bytes() {
             let byte = byte_or_error.unwrap();
             self.ram[ram_addr] = byte;
-            ram_addr += 1;
+            ram_addr = ram_addr + 1;
         }
     }
 }
