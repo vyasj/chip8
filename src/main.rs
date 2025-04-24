@@ -7,9 +7,7 @@ use tao::keyboard::KeyCode;
 use tao::platform::unix::WindowExtUnix as _;
 use tao::window::WindowBuilder;
 
-use chip8::disp::Display;
-use chip8::mem::Memory;
-use chip8::reg::Registers;
+use chip8::cpu::Cpu;
 
 use std::env;
 use std::sync::Arc;
@@ -20,25 +18,16 @@ fn main() -> Result<(), Error> {
         .nth(1)
         .expect("Expected a single command line argument");
 
-    println!("Initializing memory...");
-    let mut memory: Memory = Memory::init();
-
-    println!("Loading fonts...");
-    memory.load_font();
+    println!("Initializing CPU...");
+    let mut cpu = Cpu::init();
 
     println!("Loading rom...");
-    memory.load_rom(&filename);
-
-    println!("Initializing registers...");
-    let mut registers: Registers = Registers::init();
-
-    println!("Initializing display cache...");
-    let mut display = Display::init();
+    cpu.load_rom(&filename);
 
     println!("Rendering display window...");
     let event_loop = EventLoop::new();
     let window = {
-        let size = LogicalSize::new(display.width as f64, display.height as f64);
+        let size = LogicalSize::new(cpu.width as f64, cpu.height as f64);
         let window = WindowBuilder::new()
             .with_title("CHIP-8 shenanigans")
             .with_inner_size(size)
@@ -52,7 +41,7 @@ fn main() -> Result<(), Error> {
         let window_size = window.inner_size();
         let surface_texture =
             SurfaceTexture::new(window_size.width, window_size.height, Arc::clone(&window));
-        Pixels::new(display.width as u32, display.height as u32, surface_texture)?
+        Pixels::new(cpu.width as u32, cpu.height as u32, surface_texture)?
     };
 
     let menu = Menu::new();
@@ -91,7 +80,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x1] = true;
+                    cpu.kp[0x1] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -105,7 +94,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x2] = true;
+                    cpu.kp[0x2] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -119,7 +108,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x3] = true;
+                    cpu.kp[0x3] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -133,7 +122,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xC] = true;
+                    cpu.kp[0xC] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -147,7 +136,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x4] = true;
+                    cpu.kp[0x4] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -161,7 +150,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x5] = true;
+                    cpu.kp[0x5] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -175,7 +164,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x6] = true;
+                    cpu.kp[0x6] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -189,7 +178,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xD] = true;
+                    cpu.kp[0xD] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -203,7 +192,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x7] = true;
+                    cpu.kp[0x7] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -217,7 +206,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x8] = true;
+                    cpu.kp[0x8] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -231,7 +220,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0x9] = true;
+                    cpu.kp[0x9] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -245,7 +234,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xE] = true;
+                    cpu.kp[0xE] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -259,7 +248,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xA] = true;
+                    cpu.kp[0xA] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -273,7 +262,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0] = true;
+                    cpu.kp[0] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -287,7 +276,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xB] = true;
+                    cpu.kp[0xB] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -301,7 +290,7 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
-                    registers.kp[0xF] = true;
+                    cpu.kp[0xF] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
                 },
@@ -335,250 +324,68 @@ fn main() -> Result<(), Error> {
             },
 
             Event::MainEventsCleared => {
-                if debug_mode {
-                    println!("stack:");
-                    for idx in 0..memory.stack.len() {
-                        print!("|{}", memory.stack[idx]);
-                    }
-                    print!("|");
-                    println!("\n");
-                }
-
-                let n1: u16 = memory.ram[registers.pc as usize] as u16;
-                let n2: u16 = memory.ram[(registers.pc + 1) as usize] as u16;
-                registers.pc += 2;
-
-                if registers.pc as usize >= memory.ram.len() {
+                if cpu.pc as usize >= cpu.ram.len() {
                     println!("reached end of ram.");
                     return;
                 }
 
-                let opcode: u16 = (n1 << 8) | n2;
-                let digit1: u16 = (0xF000 & opcode) >> 12;
-                let digit2: u16 = (0x0F00 & opcode) >> 8;
-                let digit3: u16 = (0x00F0 & opcode) >> 4;
-                let digit4: u16 = 0x000F & opcode;
+                let instruction = cpu.fetch();
+                let opcode = cpu.decode(instruction);
+                let result = cpu.execute(opcode);
 
-                match (digit1, digit2, digit3, digit4) {
-                    // CLS
-                    (0, 0, 0xE, 0) => {
-                        for x in &mut display.screen {
-                            *x = false;
-                        }
-                    },
-                    // RET
-                    (0, 0, 0xE, 0xE) => {
-                        registers.sp -= 1;
-                        registers.pc = memory.stack[registers.sp as usize];
-                    },
-                    // SYS NNN
-                    (0, _, _, _) => {
-                        //println!("subroutine call: {:#x} is not implemented because it is a special subroutine call for the physical device.", opcode);
-                    },
-                    // JP NNN
-                    (0x1, _, _, _) => {
-                        registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
-                    },
-                    // CALL NNN
-                    (0x2, _, _, _) => {
-                        memory.stack[registers.sp as usize] = registers.pc;
-                        registers.pc = (digit2 << 8) | (digit3 << 4) | digit4;
-                        registers.sp += 1;
-                    },
-                    // SE Vx, kk
-                    (0x3, _, _, _) => {
-                        if registers.vx[digit2 as usize] == ((digit3 << 4) | digit4) as u8 {
-                            registers.pc += 2;
-                        }
-                    },
-                    // SNE Vx, kk
-                    (0x4, _, _, _) => {
-                        if registers.vx[digit2 as usize] != ((digit3 << 4) | digit4) as u8 {
-                            registers.pc += 2;
-                        }
-                    },
-                    // SE Vx, Vy
-                    (0x5, _, _, 0) => {
-                        if registers.vx[digit2 as usize] == registers.vx[digit3 as usize] {
-                            registers.pc += 2;
-                        }
-                    },
-                    // LD Vx, kk
-                    (0x6, _, _, _) => {
-                        registers.vx[digit2 as usize] = ((digit3 << 4) | digit4) as u8;
-                    },
-                    // ADD Vx, kk
-                    (0x7, _, _, _) => {
-                        let sum: u16 = (registers.vx[digit2 as usize] as u16) + ((digit3 << 4) | digit4);
-                        registers.vx[digit2 as usize] = sum as u8;
-                    },
-                    // LD Vx, Vy
-                    (0x8, _, _, 0) => {
-                        registers.vx[digit2 as usize] = registers.vx[digit3 as usize];
-                    },
-                    // OR Vx, Vy
-                    (0x8, _, _, 0x1) => {
-                        registers.vx[digit2 as usize] |= registers.vx[digit3 as usize];
-                    },
-                    // AND Vx, Vy
-                    (0x8, _, _, 0x2) => {
-                        registers.vx[digit2 as usize] &= registers.vx[digit3 as usize];
-                    },
-                    // XOR Vx, Vy
-                    (0x8, _, _, 0x3) => {
-                        registers.vx[digit2 as usize] ^= registers.vx[digit3 as usize];
-                    },
-                    // ADD Vx, Vy
-                    (0x8, _, _, 0x4) => {
-                        let sum: u16 = (registers.vx[digit2 as usize] as u16) + (registers.vx[digit3 as usize] as u16);
-                        if sum > 255 {
-                            registers.vx[0xF] = 1;
-                        } else {
-                            registers.vx[0xF] = 0;
-                        }
-                        registers.vx[digit2 as usize] = sum as u8;
-                    },
-                    // SUB Vx, Vy
-                    (0x8, _, _, 0x5) => {
-                        registers.vx[0xF] = if registers.vx[digit2 as usize] > registers.vx[digit3 as usize] { 1 } else { 0 };
-                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize].wrapping_sub(registers.vx[digit3 as usize]);
-                    },
-                    // SHR Vx {, Vy}
-                    (0x8, _, _, 0x6) => {
-                        if registers.vx[digit2 as usize].trailing_ones() > 0 {
-                            registers.vx[0xF] = 1;
-                        } else {
-                            registers.vx[0xF] = 0;
-                        }
-                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize] >> 1;
-                    },
-                    // SUBN Vx, Vy
-                    (0x8, _, _, 0x7) => {
-                        registers.vx[0xF] = if registers.vx[digit3 as usize] > registers.vx[digit2 as usize] { 1 } else { 0 };
-                        registers.vx[digit2 as usize] = registers.vx[digit3 as usize].wrapping_sub(registers.vx[digit2 as usize]);
-                    },
-                    // SHL Vx {, Vy}
-                    (0x8, _, _, 0xE) => {
-                        if registers.vx[digit2 as usize].leading_ones() > 0 {
-                            registers.vx[0xF] = 1;
-                        } else {
-                            registers.vx[0xF] = 0;
-                        }
-                        registers.vx[digit2 as usize] = registers.vx[digit2 as usize] << 1;
-                    },
-                    // SNE, Vx, Vy
-                    (0x9, _, _, 0) => {
-                        if registers.vx[digit2 as usize] != registers.vx[digit3 as usize] {
-                            registers.pc += 2;
-                        }
-                    },
-                    // LD IR, NNN
-                    (0xA, _, _, _) => {
-                        registers.ir = (digit2 << 8) | (digit3 << 4) | digit4;
-                    },
-                    // JP, V0 + NNN
-                    (0xB, _, _, _) => {
-                        registers.pc = (registers.vx[0] as u16) + ((digit2 << 8) | (digit3 << 4) | digit4);
-                    },
-                    // RND Vx, kk
-                    (0xC, _, _, _) => {
-                        registers.vx[digit2 as usize] = registers.gen_random() & (((digit3 << 4) | digit4) as u8 );
-                    },
-                    // DRAW
-                    (0xD, _, _, _) => {
-                        let x_coord: u8 = registers.vx[digit2 as usize];
-                        let y_coord: u8 = registers.vx[digit3 as usize];
-                        registers.vx[0xF] = 0;
-                        let n_pixels: u16 = digit4;
-
-                        display.update(
-                            x_coord,
-                            y_coord,
-                            n_pixels,
-                            &mut registers.vx,
-                            registers.ir,
-                            &memory.ram,
-                        );
+                if result.is_some() {
+                    let val = result.unwrap();
+                    if val == 1 {
+                        // Request redraw from window
                         window.request_redraw();
-                    },
-                    // SKP Vx
-                    (0xE, _, 0x9, 0xE) => {
-                        let key = registers.vx[digit2 as usize];
-                        if registers.kp[key as usize] {
-                            registers.pc += 1;
-                        }
-                    },
-                    // SKNP Vx
-                    (0xE, _, 0xA, 0x1) => {
-                        let key = registers.vx[digit2 as usize];
-                        if !registers.kp[key as usize] {
-                            registers.pc += 1;
-                        }
-                    },
-                    // LD, Vx, DT
-                    (0xF, _, 0, 0x7) => {
-                        registers.vx[digit2 as usize] = registers.dt;
-                    },
-                    // LD, Vx, K
-                    (0xF, _, 0, 0xA) => {
-                        let key_pos = registers.kp.iter().position(|&x| x == true);
-                        if key_pos.is_some() {
-                            registers.vx[digit2 as usize] = key_pos.unwrap() as u8;
-                        } else {
-                            *control_flow = ControlFlow::Wait;
-                        }
-                    },
-                    // LD DT, Vx
-                    (0xF, _, 0x1, 0x5) => {
-                        registers.dt = registers.vx[digit2 as usize];
-                    },
-                    // LD ST, Vx
-                    (0xF, _, 0x1, 0x8) => {
-                        registers.st = registers.vx[digit2 as usize];
-                    },
-                    // ADD IR, Vx
-                    (0xF, _, 0x1, 0xE) => {
-                        registers.ir += registers.vx[digit2 as usize] as u16;
-                    },
-                    // LD F, Vx
-                    (0xF, _, 0x2, 0x9) => {
-                        registers.ir = (digit2 as u16) * 5;
-                    },
-                    // LD B, Vx
-                    (0xF, _, 0x3, 0x3) => {
-                        let start_addr = registers.ir as usize;
-                        memory.ram[start_addr] = registers.vx[digit2 as usize] / 100;
-                        memory.ram[start_addr + 1] = (registers.vx[digit2 as usize] % 100) / 10;
-                        memory.ram[start_addr + 2] = registers.vx[digit2 as usize] % 10;
-                    },
-                    // LD [I], Vx
-                    (0xF, _, 0x5, 0x5) => {
-                        let start_addr = registers.ir as usize;
-                        memory.ram[start_addr..=(start_addr+(digit2 as usize))].copy_from_slice(&registers.vx[0..=(digit2 as usize)]);
-                    },
-                    // LD Vx, [I]
-                    (0xF, _, 0x6, 0x5) => {
-                        let start_addr = registers.ir as usize;
-                        registers.vx[0..=(digit2 as usize)].copy_from_slice(&memory.ram[start_addr..=(start_addr+(digit2 as usize))]);
-                    }
-                    _ => {
-                        println!("Unknown opcode: {:#x}", opcode);
+                    } else if val == 2 {
+                        // Wait for key press
+                        *control_flow = ControlFlow::Wait;
                     }
                 }
 
-                if registers.dt > 0 {
-                    registers.dt -= 1;
+                if debug_mode {
+                    println!("--------------------------------------------------");
+                    println!("program counter: {}", cpu.pc);
+
+                    println!("stack pointer: {}", cpu.sp);
+
+                    println!("index register: {}", cpu.ir);
+
+                    print!("stack: ");
+                    for idx in 0..cpu.stack.len() {
+                        print!("|{}", cpu.stack[idx]);
+                    }
+                    println!("|");
+
+                    print!("v registers: ");
+                    for idx in 0..cpu.vx.len() {
+                        print!("|{}", cpu.vx[idx]);
+                    }
+                    println!("|");
+
+                    println!("sound timer/delay timer: {}/{}", cpu.st, cpu.dt);
+
+                    println!("processing opcode: {:#x}", instruction);
+
+                    println!("--------------------------------------------------");
                 }
 
-                if registers.st > 0 {
-                    registers.st -= 1;
+                
+
+                if cpu.dt > 0 {
+                    cpu.dt -= 1;
                 }
 
-                registers.kp = vec![false; 16];
+                if cpu.st > 0 {
+                    cpu.st -= 1;
+                }
+
+                cpu.kp = vec![false; 16];
             },
 
             Event::RedrawRequested(_) => {
-                display.draw(pixels.frame_mut());
+                cpu.draw(pixels.frame_mut());
                 if let Err(err) = pixels.render() {
                     println!("{}", err);
                     *control_flow = ControlFlow::Exit;
@@ -602,8 +409,7 @@ mod tests {
 
     #[test]
     fn test_fonts() {
-        let mut memory = Memory::init();
-        memory.load_font();
+        let memory = Cpu::init();
 
         let exp_result = [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -629,7 +435,7 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let mut display = Display::init();
+        let mut display = Cpu::init();
 
         let screen_copy: Vec<bool> = vec![false; 2048];
 
@@ -648,13 +454,5 @@ mod tests {
         assert_eq!(exp_result, result);
     }
 
-    #[test]
-    fn test_fx33() {
-        let num: u16 = 200;
-        let ones = num % 10;
-        let tens = ((num - ones) % 100) / 10;
-        let hundreds = (num - ones - (tens * 10)) / 100;
-
-        assert_eq!((hundreds, tens, ones), (2, 0, 0));
-    }
+    
 }
