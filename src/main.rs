@@ -1,13 +1,14 @@
 use muda::{Menu, MenuEvent, Submenu};
 use pixels::{Error, Pixels, SurfaceTexture};
 use tao::dpi::LogicalSize;
-use tao::event::{Event, KeyEvent, WindowEvent, ElementState};
+use tao::event::{ElementState, Event, KeyEvent, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoop};
 use tao::keyboard::KeyCode;
 use tao::platform::unix::WindowExtUnix as _;
 use tao::window::WindowBuilder;
 
 use chip8::cpu::Cpu;
+use chip8::cpu::Opcode;
 
 use std::env;
 use std::sync::Arc;
@@ -69,7 +70,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     *control_flow = ControlFlow::Exit;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -83,7 +84,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x1] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -97,7 +98,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x2] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -111,7 +112,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x3] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -125,7 +126,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xC] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -139,7 +140,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x4] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -153,7 +154,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x5] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -167,7 +168,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x6] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -181,7 +182,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xD] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -195,7 +196,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x7] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -209,7 +210,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x8] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -223,7 +224,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0x9] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -237,7 +238,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xE] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -251,7 +252,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xA] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -265,7 +266,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -279,7 +280,7 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xB] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -293,14 +294,14 @@ fn main() -> Result<(), Error> {
                     cpu.kp[0xF] = true;
                     debug_mode = false;
                     *control_flow = ControlFlow::Poll;
-                },
+                }
 
                 WindowEvent::Resized(size) => {
                     if let Err(err) = pixels.resize_surface(size.width, size.height) {
                         println!("{}", err);
                         *control_flow = ControlFlow::Exit;
                     }
-                },
+                }
 
                 WindowEvent::KeyboardInput {
                     event:
@@ -316,7 +317,7 @@ fn main() -> Result<(), Error> {
                     }
                     debug_mode = true;
                     *control_flow = ControlFlow::Wait;
-                },
+                }
 
                 _ => {
                     //
@@ -330,7 +331,7 @@ fn main() -> Result<(), Error> {
                 }
 
                 let instruction = cpu.fetch();
-                let opcode = cpu.decode(instruction);
+                let opcode = Opcode::decode(instruction).unwrap();
                 let result = cpu.execute(opcode);
 
                 if result.is_some() {
@@ -371,8 +372,6 @@ fn main() -> Result<(), Error> {
                     println!("--------------------------------------------------");
                 }
 
-                
-
                 if cpu.dt > 0 {
                     cpu.dt -= 1;
                 }
@@ -382,7 +381,7 @@ fn main() -> Result<(), Error> {
                 }
 
                 cpu.kp = vec![false; 16];
-            },
+            }
 
             Event::RedrawRequested(_) => {
                 cpu.draw(pixels.frame_mut());
@@ -390,7 +389,7 @@ fn main() -> Result<(), Error> {
                     println!("{}", err);
                     *control_flow = ControlFlow::Exit;
                 }
-            },
+            }
 
             _ => {
                 if let Ok(event) = MenuEvent::receiver().try_recv() {
@@ -406,6 +405,7 @@ fn main() -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chip8::cpu::Opcode;
 
     #[test]
     fn test_fonts() {
@@ -454,5 +454,98 @@ mod tests {
         assert_eq!(exp_result, result);
     }
 
-    
+    #[test]
+    fn test_00e0() {
+        // CLS
+        let mut cpu = Cpu::init();
+        cpu.screen = vec![true; 64 * 32];
+
+        cpu.ram[0x200] = 0x00;
+        cpu.ram[0x201] = 0xe0;
+
+        let instruction = cpu.fetch();
+        let opcode = Opcode::decode(instruction).unwrap();
+        let _ = cpu.execute(opcode);
+
+        assert_eq!(cpu.screen, vec![false; 64 * 32]);
+    }
+
+    #[test]
+    fn test_00ee() {
+        // RET
+        for stack_idx in 1..=15 {
+            let mut cpu = Cpu::init();
+            let ret_addr: u16 = 0x250;
+            cpu.sp = stack_idx;
+            cpu.stack[cpu.sp as usize] = ret_addr;
+
+            cpu.ram[0x200] = 0x00;
+            cpu.ram[0x201] = 0xee;
+
+            let instruction = cpu.fetch();
+            let opcode = Opcode::decode(instruction).unwrap();
+            let _ = cpu.execute(opcode);
+
+            assert_eq!(cpu.pc, ret_addr);
+            assert_eq!(cpu.sp, stack_idx - 1);
+        }
+    }
+
+    #[test]
+    fn test_1nnn() {
+        // JP addr
+        let mut cpu = Cpu::init();
+        let jp_addr: u16 = 0x250;
+
+        cpu.ram[0x200] = ((0x1000 | jp_addr) >> 8) as u8;
+        cpu.ram[0x201] = (0x1000 | jp_addr) as u8;
+
+        let instruction = cpu.fetch();
+        let opcode = Opcode::decode(instruction).unwrap();
+        let _ = cpu.execute(opcode);
+
+        assert_eq!(cpu.pc, jp_addr);
+    }
+
+    #[test]
+    fn test_2nnn() {
+        // JSR addr
+        for stack_idx in 0..=14 {
+            let mut cpu = Cpu::init();
+            let sr_addr: u16 = 0x250;
+            cpu.sp = stack_idx;
+
+            let tmp = 0x2000 | sr_addr;
+            cpu.ram[0x200] = (tmp >> 8) as u8;
+            cpu.ram[0x201] = tmp as u8;
+
+            let instruction = cpu.fetch();
+            let opcode = Opcode::decode(instruction).unwrap();
+            let _ = cpu.execute(opcode);
+
+            assert_eq!(cpu.stack[cpu.sp as usize], 0x202);
+            assert_eq!(cpu.pc, 0x250);
+            assert_eq!(cpu.sp, stack_idx + 1);
+        }
+    }
+
+    #[test]
+    fn test_3xkk() {
+        // SE x, kk
+        let mut cpu = Cpu::init();
+        let kk: u8 = 0x25;
+        let x: u8 = 0x1;
+        cpu.vx[x as usize] = kk;
+
+        let tmp: u16 = 0x3000 | ((x as u16) << 8) | (kk as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let opcode = Opcode::decode(instruction).unwrap();
+        assert!(matches!(opcode, Opcode::Op3xkk { x: _, kk: _ }));
+        let _ = cpu.execute(opcode);
+
+        assert_eq!(cpu.pc, 0x204);
+    }
 }

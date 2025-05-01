@@ -5,31 +5,30 @@ use std::io::Read;
 use rand::Rng;
 
 pub enum Opcode {
-    Unknown { instruction: u16 },
     Op00e0,
     Op00ee,
     Op0nnn { nnn: u16 },
     Op1nnn { nnn: u16 },
     Op2nnn { nnn: u16 },
-    Op3xkk { x: u8, kk: u8},
-    Op4xkk { x: u8, kk: u8},
-    Op5xy0 { x: u8, y: u8},
-    Op6xkk { x: u8, kk: u8},
-    Op7xkk { x: u8, kk: u8},
-    Op8xy0 { x: u8, y: u8},
-    Op8xy1 { x: u8, y: u8},
-    Op8xy2 { x: u8, y: u8},
-    Op8xy3 { x: u8, y: u8},
-    Op8xy4 { x: u8, y: u8},
-    Op8xy5 { x: u8, y: u8},
-    Op8xy6 { x: u8, y: u8},
-    Op8xy7 { x: u8, y: u8},
-    Op8xye { x: u8, y: u8},
-    Op9xy0 { x: u8, y: u8},
+    Op3xkk { x: u8, kk: u8 },
+    Op4xkk { x: u8, kk: u8 },
+    Op5xy0 { x: u8, y: u8 },
+    Op6xkk { x: u8, kk: u8 },
+    Op7xkk { x: u8, kk: u8 },
+    Op8xy0 { x: u8, y: u8 },
+    Op8xy1 { x: u8, y: u8 },
+    Op8xy2 { x: u8, y: u8 },
+    Op8xy3 { x: u8, y: u8 },
+    Op8xy4 { x: u8, y: u8 },
+    Op8xy5 { x: u8, y: u8 },
+    Op8xy6 { x: u8, y: u8 },
+    Op8xy7 { x: u8, y: u8 },
+    Op8xye { x: u8, y: u8 },
+    Op9xy0 { x: u8, y: u8 },
     Opannn { nnn: u16 },
     Opbnnn { nnn: u16 },
-    Opcxkk { x: u8, kk: u8},
-    Opdxyn { x: u8, y: u8, n: u8},
+    Opcxkk { x: u8, kk: u8 },
+    Opdxyn { x: u8, y: u8, n: u8 },
     Opex9e { x: u8 },
     Opexa1 { x: u8 },
     Opfx07 { x: u8 },
@@ -43,17 +42,72 @@ pub enum Opcode {
     Opfx65 { x: u8 },
 }
 
+impl Opcode {
+    pub fn decode(instruction: u16) -> Option<Self> {
+        let nibbles = (
+            (0xF000 & instruction) >> 12,
+            (0x0F00 & instruction) >> 8,
+            (0x00F0 & instruction) >> 4,
+            0x000F & instruction,
+        );
+
+        let nnn = 0x0FFF & instruction;
+        let kk = (0x00FF & instruction) as u8;
+        let n = (0x000F & instruction) as u8;
+        let x = ((0x0F00 & instruction) >> 8) as u8;
+        let y = ((0x00F0 & instruction) >> 4) as u8;
+
+        Some(match nibbles {
+            (0x0, 0x0, 0xE, 0x0) => Opcode::Op00e0,
+            (0x0, 0x0, 0xE, 0xE) => Opcode::Op00ee,
+            (0x0, _, _, _) => Opcode::Op0nnn { nnn },
+            (0x1, _, _, _) => Opcode::Op1nnn { nnn },
+            (0x2, _, _, _) => Opcode::Op2nnn { nnn },
+            (0x3, _, _, _) => Opcode::Op3xkk { x, kk },
+            (0x4, _, _, _) => Opcode::Op4xkk { x, kk },
+            (0x5, _, _, 0x0) => Opcode::Op5xy0 { x, y },
+            (0x6, _, _, _) => Opcode::Op6xkk { x, kk },
+            (0x7, _, _, _) => Opcode::Op7xkk { x, kk },
+            (0x8, _, _, 0x1) => Opcode::Op8xy1 { x, y },
+            (0x8, _, _, 0x2) => Opcode::Op8xy2 { x, y },
+            (0x8, _, _, 0x3) => Opcode::Op8xy3 { x, y },
+            (0x8, _, _, 0x4) => Opcode::Op8xy4 { x, y },
+            (0x8, _, _, 0x5) => Opcode::Op8xy5 { x, y },
+            (0x8, _, _, 0x6) => Opcode::Op8xy6 { x, y },
+            (0x8, _, _, 0x7) => Opcode::Op8xy7 { x, y },
+            (0x8, _, _, 0xE) => Opcode::Op8xye { x, y },
+            (0x9, _, _, 0x0) => Opcode::Op9xy0 { x, y },
+            (0xA, _, _, _) => Opcode::Opannn { nnn },
+            (0xB, _, _, _) => Opcode::Opbnnn { nnn },
+            (0xC, _, _, _) => Opcode::Opcxkk { x, kk },
+            (0xD, _, _, _) => Opcode::Opdxyn { x, y, n },
+            (0xE, _, 0x9, 0xE) => Opcode::Opex9e { x },
+            (0xE, _, 0xA, 0x1) => Opcode::Opexa1 { x },
+            (0xF, _, 0x0, 0xA) => Opcode::Opfx0a { x },
+            (0xF, _, 0x1, 0x5) => Opcode::Opfx15 { x },
+            (0xF, _, 0x1, 0x8) => Opcode::Opfx18 { x },
+            (0xF, _, 0x1, 0xE) => Opcode::Opfx1e { x },
+            (0xF, _, 0x2, 0x9) => Opcode::Opfx29 { x },
+            (0xF, _, 0x3, 0x3) => Opcode::Opfx33 { x },
+            (0xF, _, 0x5, 0x5) => Opcode::Opfx55 { x },
+            (0xF, _, 0x6, 0x5) => Opcode::Opfx65 { x },
+            (0xF, _, 0x0, 0x7) => Opcode::Opfx07 { x },
+            _ => return None,
+        })
+    }
+}
+
 pub struct Cpu {
     pub ram: Vec<u8>,
     pub stack: Vec<u16>,
 
-    pub pc: u16,        // program counter
-    pub ir: u16,        // index register
-    pub vx: Vec<u8>,    // V-registers
-    pub st: u8,         // sound timer
-    pub dt: u8,         // delay timer
-    pub sp: u8,         // stack pointer
-    pub kp: Vec<bool>,  // key pressed
+    pub pc: u16,       // program counter
+    pub ir: u16,       // index register
+    pub vx: Vec<u8>,   // V-registers
+    pub st: u8,        // sound timer
+    pub dt: u8,        // delay timer
+    pub sp: u8,        // stack pointer
+    pub kp: Vec<bool>, // key pressed
 
     pub height: u8,
     pub width: u8,
@@ -71,7 +125,7 @@ impl Cpu {
             vx: vec![0; 16],
             st: 60,
             dt: 60,
-            sp: 0,
+            sp: 16,
             kp: vec![false; 16],
 
             height: 32,
@@ -143,100 +197,43 @@ impl Cpu {
         (n1 << 8) | n2
     }
 
-    pub fn decode(&mut self, instruction: u16) -> Opcode {
-        let nibbles = (
-            (0xF000 & instruction) >> 12,
-            (0x0F00 & instruction) >> 8,
-            (0x00F0 & instruction) >> 4,
-            0x000F & instruction
-        );
-
-        let nnn = 0x0FFF & instruction;
-        let kk = (0x00FF & instruction) as u8;
-        let n = (0x000F & instruction) as u8;
-        let x = (0x0F00 & instruction) as u8;
-        let y = (0x00F0 & instruction) as u8;
-
-        match nibbles {
-            (0x0, 0x0, 0xE, 0x0) => { Opcode::Op00e0 },
-            (0x0, 0x0, 0xE, 0xE) => { Opcode::Op00ee },
-            (0x0, _, _, _) =>       { Opcode::Op0nnn { nnn } },
-            (0x1, _, _, _) =>       { Opcode::Op1nnn { nnn } },
-            (0x2, _, _, _) =>       { Opcode::Op2nnn { nnn } },
-            (0x3, _, _, _) =>       { Opcode::Op3xkk { x, kk } },
-            (0x4, _, _, _) =>       { Opcode::Op4xkk { x, kk } },
-            (0x5, _, _, 0x0) =>     { Opcode::Op5xy0 { x, y } },
-            (0x6, _, _, _) =>       { Opcode::Op6xkk { x, kk } },
-            (0x7, _, _, _) =>       { Opcode::Op7xkk { x, kk } },
-            (0x8, _, _, 0x1) =>     { Opcode::Op8xy1 { x, y } },
-            (0x8, _, _, 0x2) =>     { Opcode::Op8xy2 { x, y } },
-            (0x8, _, _, 0x3) =>     { Opcode::Op8xy3 { x, y } },
-            (0x8, _, _, 0x4) =>     { Opcode::Op8xy4 { x, y } },
-            (0x8, _, _, 0x5) =>     { Opcode::Op8xy5 { x, y } },
-            (0x8, _, _, 0x6) =>     { Opcode::Op8xy6 { x, y } },
-            (0x8, _, _, 0x7) =>     { Opcode::Op8xy7 { x, y } },
-            (0x8, _, _, 0xE) =>     { Opcode::Op8xye { x, y } },
-            (0x9, _, _, 0x0) =>     { Opcode::Op9xy0 { x, y } },
-            (0xA, _, _, _) =>       { Opcode::Opannn { nnn } },
-            (0xB, _, _, _) =>       { Opcode::Opbnnn { nnn } },
-            (0xC, _, _, _) =>       { Opcode::Opcxkk { x, kk } },
-            (0xD, _, _, _) =>       { Opcode::Opdxyn { x, y, n } },
-            (0xE, _, 0x9, 0xE) =>   { Opcode::Opex9e { x } },
-            (0xE, _, 0xA, 0x1) =>   { Opcode::Opexa1 { x } },
-            (0xF, _, 0x0, 0xA) =>   { Opcode::Opfx0a { x } },
-            (0xF, _, 0x1, 0x5) =>   { Opcode::Opfx15 { x } },
-            (0xF, _, 0x1, 0x8) =>   { Opcode::Opfx18 { x } },
-            (0xF, _, 0x1, 0xE) =>   { Opcode::Opfx1e { x } },
-            (0xF, _, 0x2, 0x9) =>   { Opcode::Opfx29 { x } },
-            (0xF, _, 0x3, 0x3) =>   { Opcode::Opfx33 { x } },
-            (0xF, _, 0x5, 0x5) =>   { Opcode::Opfx55 { x } },
-            (0xF, _, 0x6, 0x5) =>   { Opcode::Opfx65 { x } },
-            (0xF, _, 0x0, 0x7) =>   { Opcode::Opfx07 { x } },
-            _ =>                    { Opcode::Unknown { instruction } },
-        }
-    }
-
     pub fn execute(&mut self, opcode: Opcode) -> Option<u8> {
         match opcode {
-            Opcode::Op00e0 => { self.op_00e0() },
-            Opcode::Op00ee => { self.op_00ee() },
-            Opcode::Op0nnn { nnn } => { self.op_0nnn(nnn) },
-            Opcode::Op1nnn { nnn } => { self.op_1nnn(nnn) },
-            Opcode::Op2nnn { nnn} => { self.op_2nnn(nnn) },
-            Opcode::Op3xkk { x, kk } => { self.op_3xkk(x, kk) },
-            Opcode::Op4xkk { x, kk } => { self.op_4xkk(x, kk) },
-            Opcode::Op5xy0 { x, y } => { self.op_5xy0(x, y) },
-            Opcode::Op6xkk { x, kk } => { self.op_6xkk(x, kk) },
-            Opcode::Op7xkk { x, kk } => { self.op_7xkk(x, kk) },
-            Opcode::Op8xy0 { x, y } => { self.op_8xy0(x, y) },
-            Opcode::Op8xy1 { x, y } => { self.op_8xy1(x, y) },
-            Opcode::Op8xy2 { x, y } => { self.op_8xy2(x, y) },
-            Opcode::Op8xy3 { x, y } => { self.op_8xy3(x, y) },
-            Opcode::Op8xy4 { x, y } => { self.op_8xy4(x, y) },
-            Opcode::Op8xy5 { x, y } => { self.op_8xy5(x, y) },
-            Opcode::Op8xy6 { x, y } => { self.op_8xy6(x, y) },
-            Opcode::Op8xy7 { x, y } => { self.op_8xy7(x, y) },
-            Opcode::Op8xye { x, y } => { self.op_8xye(x, y) },
-            Opcode::Op9xy0 { x, y } => { self.op_9xy0(x, y) },
-            Opcode::Opannn { nnn } => { self.op_annn(nnn) },
-            Opcode::Opbnnn { nnn } => { self.op_bnnn(nnn) },
-            Opcode::Opcxkk { x, kk } => { self.op_cxkk(x, kk) },
-            Opcode::Opdxyn { x, y, n } => { self.op_dxyn(x, y, n) },
-            Opcode::Opex9e { x } => { self.op_ex9e(x) },
-            Opcode::Opexa1 { x } => { self.op_exa1(x) },
-            Opcode::Opfx07 { x } => { self.op_fx07(x) },
-            Opcode::Opfx0a { x } => { self.op_fx0a(x) },
-            Opcode::Opfx15 { x } => { self.op_fx15(x) },
-            Opcode::Opfx18 { x } => { self.op_fx18(x) },
-            Opcode::Opfx1e { x } => { self.op_fx1e(x) },
-            Opcode::Opfx29 { x } => { self.op_fx29(x) },
-            Opcode::Opfx33 { x } => { self.op_fx33(x) },
-            Opcode::Opfx55 { x } => { self.op_fx55(x) },
-            Opcode::Opfx65 { x } => { self.op_fx65(x) },
-            _ => {
-                println!("Unknown opcode");
-                None
-            }
+            Opcode::Op00e0 => self.op_00e0(),
+            Opcode::Op00ee => self.op_00ee(),
+            Opcode::Op0nnn { nnn } => self.op_0nnn(nnn),
+            Opcode::Op1nnn { nnn } => self.op_1nnn(nnn),
+            Opcode::Op2nnn { nnn } => self.op_2nnn(nnn),
+            Opcode::Op3xkk { x, kk } => self.op_3xkk(x, kk),
+            Opcode::Op4xkk { x, kk } => self.op_4xkk(x, kk),
+            Opcode::Op5xy0 { x, y } => self.op_5xy0(x, y),
+            Opcode::Op6xkk { x, kk } => self.op_6xkk(x, kk),
+            Opcode::Op7xkk { x, kk } => self.op_7xkk(x, kk),
+            Opcode::Op8xy0 { x, y } => self.op_8xy0(x, y),
+            Opcode::Op8xy1 { x, y } => self.op_8xy1(x, y),
+            Opcode::Op8xy2 { x, y } => self.op_8xy2(x, y),
+            Opcode::Op8xy3 { x, y } => self.op_8xy3(x, y),
+            Opcode::Op8xy4 { x, y } => self.op_8xy4(x, y),
+            Opcode::Op8xy5 { x, y } => self.op_8xy5(x, y),
+            Opcode::Op8xy6 { x, y } => self.op_8xy6(x, y),
+            Opcode::Op8xy7 { x, y } => self.op_8xy7(x, y),
+            Opcode::Op8xye { x, y } => self.op_8xye(x, y),
+            Opcode::Op9xy0 { x, y } => self.op_9xy0(x, y),
+            Opcode::Opannn { nnn } => self.op_annn(nnn),
+            Opcode::Opbnnn { nnn } => self.op_bnnn(nnn),
+            Opcode::Opcxkk { x, kk } => self.op_cxkk(x, kk),
+            Opcode::Opdxyn { x, y, n } => self.op_dxyn(x, y, n),
+            Opcode::Opex9e { x } => self.op_ex9e(x),
+            Opcode::Opexa1 { x } => self.op_exa1(x),
+            Opcode::Opfx07 { x } => self.op_fx07(x),
+            Opcode::Opfx0a { x } => self.op_fx0a(x),
+            Opcode::Opfx15 { x } => self.op_fx15(x),
+            Opcode::Opfx18 { x } => self.op_fx18(x),
+            Opcode::Opfx1e { x } => self.op_fx1e(x),
+            Opcode::Opfx29 { x } => self.op_fx29(x),
+            Opcode::Opfx33 { x } => self.op_fx33(x),
+            Opcode::Opfx55 { x } => self.op_fx55(x),
+            Opcode::Opfx65 { x } => self.op_fx65(x),
         }
     }
 
@@ -251,8 +248,9 @@ impl Cpu {
 
     fn op_00ee(&mut self) -> Option<u8> {
         // RET
-        self.sp -= 1;
         self.pc = self.stack[self.sp as usize];
+        self.stack[self.sp as usize] = 0;
+        self.sp -= 1;
 
         None
     }
@@ -273,9 +271,9 @@ impl Cpu {
 
     fn op_2nnn(&mut self, nnn: u16) -> Option<u8> {
         // JSR addr
+        self.sp += 1;
         self.stack[self.sp as usize] = self.pc;
         self.pc = nnn;
-        self.sp += 1;
 
         None
     }
@@ -352,7 +350,7 @@ impl Cpu {
     fn op_8xy4(&mut self, x: u8, y: u8) -> Option<u8> {
         // ADD x, y
         let sum: u16 = (self.vx[x as usize] as u16) + (self.vx[y as usize] as u16);
-        
+
         if sum & 0xFF00 > 0 {
             self.vx[0xF] = 1;
         }
@@ -364,15 +362,27 @@ impl Cpu {
 
     fn op_8xy5(&mut self, x: u8, y: u8) -> Option<u8> {
         // SUB x, y
-        self.vx[0xF] = if self.vx[x as usize] > self.vx[y as usize] { 1 } else { 0 };
-        self.vx[x as usize] = if self.vx[0xF] == 1 { self.vx[x as usize] - self.vx[y as usize] } else { self.vx[y as usize] - self.vx[x as usize] };
+        self.vx[0xF] = if self.vx[x as usize] > self.vx[y as usize] {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] = if self.vx[0xF] == 1 {
+            self.vx[x as usize] - self.vx[y as usize]
+        } else {
+            self.vx[y as usize] - self.vx[x as usize]
+        };
 
         None
     }
 
     fn op_8xy6(&mut self, x: u8, _y: u8) -> Option<u8> {
         // SHR x {, y}
-        if self.vx[x as usize].trailing_ones() > 1 { self.vx[0xF] = 1 } else { self.vx[0xF] = 0 };
+        if self.vx[x as usize].trailing_ones() > 1 {
+            self.vx[0xF] = 1
+        } else {
+            self.vx[0xF] = 0
+        };
         self.vx[x as usize] = self.vx[x as usize] >> 1;
 
         None
@@ -380,15 +390,27 @@ impl Cpu {
 
     fn op_8xy7(&mut self, x: u8, y: u8) -> Option<u8> {
         // SUBN x, y
-        self.vx[0xF] = if self.vx[y as usize] > self.vx[x as usize] { 1 } else { 0 };
-        self.vx[x as usize] = if self.vx[0xF] == 0 { self.vx[x as usize] - self.vx[y as usize] } else { self.vx[y as usize] - self.vx[x as usize] };
+        self.vx[0xF] = if self.vx[y as usize] > self.vx[x as usize] {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] = if self.vx[0xF] == 0 {
+            self.vx[x as usize] - self.vx[y as usize]
+        } else {
+            self.vx[y as usize] - self.vx[x as usize]
+        };
 
         None
     }
 
     fn op_8xye(&mut self, x: u8, _y: u8) -> Option<u8> {
         // SHR x {, y}
-        if self.vx[x as usize].leading_ones() > 1 { self.vx[0xF] = 1 } else { self.vx[0xF] = 0 };
+        if self.vx[x as usize].leading_ones() > 1 {
+            self.vx[0xF] = 1
+        } else {
+            self.vx[0xF] = 0
+        };
         self.vx[x as usize] = self.vx[x as usize] << 1;
 
         None
@@ -533,7 +555,8 @@ impl Cpu {
     fn op_fx55(&mut self, x: u8) -> Option<u8> {
         // LD [I], x
         let start_addr = self.ir as usize;
-        self.ram[start_addr..=(start_addr+(x as usize))].copy_from_slice(&self.vx[0..=(x as usize)]);
+        self.ram[start_addr..=(start_addr + (x as usize))]
+            .copy_from_slice(&self.vx[0..=(x as usize)]);
 
         None
     }
@@ -541,7 +564,8 @@ impl Cpu {
     fn op_fx65(&mut self, x: u8) -> Option<u8> {
         // LD x, [I]
         let start_addr = self.ir as usize;
-        self.vx[0..=(x as usize)].copy_from_slice(&self.ram[start_addr..=(start_addr+(x as usize))]);
+        self.vx[0..=(x as usize)]
+            .copy_from_slice(&self.ram[start_addr..=(start_addr + (x as usize))]);
 
         None
     }
