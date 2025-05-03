@@ -4,45 +4,60 @@ use std::io::Read;
 
 use rand::Rng;
 
-pub enum Opcode {
-    Op00e0,
-    Op00ee,
-    Op0nnn { nnn: u16 },
-    Op1nnn { nnn: u16 },
-    Op2nnn { nnn: u16 },
-    Op3xkk { x: u8, kk: u8 },
-    Op4xkk { x: u8, kk: u8 },
-    Op5xy0 { x: u8, y: u8 },
-    Op6xkk { x: u8, kk: u8 },
-    Op7xkk { x: u8, kk: u8 },
-    Op8xy0 { x: u8, y: u8 },
-    Op8xy1 { x: u8, y: u8 },
-    Op8xy2 { x: u8, y: u8 },
-    Op8xy3 { x: u8, y: u8 },
-    Op8xy4 { x: u8, y: u8 },
-    Op8xy5 { x: u8, y: u8 },
-    Op8xy6 { x: u8, y: u8 },
-    Op8xy7 { x: u8, y: u8 },
-    Op8xye { x: u8, y: u8 },
-    Op9xy0 { x: u8, y: u8 },
-    Opannn { nnn: u16 },
-    Opbnnn { nnn: u16 },
-    Opcxkk { x: u8, kk: u8 },
-    Opdxyn { x: u8, y: u8, n: u8 },
-    Opex9e { x: u8 },
-    Opexa1 { x: u8 },
-    Opfx07 { x: u8 },
-    Opfx0a { x: u8 },
-    Opfx15 { x: u8 },
-    Opfx18 { x: u8 },
-    Opfx1e { x: u8 },
-    Opfx29 { x: u8 },
-    Opfx33 { x: u8 },
-    Opfx55 { x: u8 },
-    Opfx65 { x: u8 },
+pub enum JPType {
+    Addr(u16),
+    FromV0(u16),
 }
 
-impl Opcode {
+pub enum SEType {
+    Byte(u8),
+    Reg(u8),
+}
+
+pub enum LDType {
+    Byte(u8),
+    Reg(u8),
+    Addr(u16),
+    FromDT,
+    KeyPress,
+    ToDT,
+    ToST,
+    F,
+    B,
+    ToI,
+    FromI,
+}
+
+pub enum AddType {
+    Byte(u8),
+    Reg(u8),
+    I,
+}
+
+pub enum Instruction {
+    CLS,
+    RET,
+    SYS(u16),
+    JP(JPType),
+    CALL(u16),
+    SE(u8, SEType),
+    SNE(u8, SEType),
+    LD(u8, LDType),
+    ADD(u8, AddType),
+    OR(u8, u8),
+    AND(u8, u8),
+    XOR(u8, u8),
+    SUB(u8, u8),
+    SHR(u8, u8),
+    SUBN(u8, u8),
+    SHL(u8, u8),
+    RND(u8, u8),
+    DRW(u8, u8, u8),
+    SKP(u8),
+    SKNP(u8),
+}
+
+impl Instruction {
     pub fn decode(instruction: u16) -> Option<Self> {
         let nibbles = (
             (0xF000 & instruction) >> 12,
@@ -58,40 +73,41 @@ impl Opcode {
         let y = ((0x00F0 & instruction) >> 4) as u8;
 
         Some(match nibbles {
-            (0x0, 0x0, 0xE, 0x0) => Opcode::Op00e0,
-            (0x0, 0x0, 0xE, 0xE) => Opcode::Op00ee,
-            (0x0, _, _, _) => Opcode::Op0nnn { nnn },
-            (0x1, _, _, _) => Opcode::Op1nnn { nnn },
-            (0x2, _, _, _) => Opcode::Op2nnn { nnn },
-            (0x3, _, _, _) => Opcode::Op3xkk { x, kk },
-            (0x4, _, _, _) => Opcode::Op4xkk { x, kk },
-            (0x5, _, _, 0x0) => Opcode::Op5xy0 { x, y },
-            (0x6, _, _, _) => Opcode::Op6xkk { x, kk },
-            (0x7, _, _, _) => Opcode::Op7xkk { x, kk },
-            (0x8, _, _, 0x1) => Opcode::Op8xy1 { x, y },
-            (0x8, _, _, 0x2) => Opcode::Op8xy2 { x, y },
-            (0x8, _, _, 0x3) => Opcode::Op8xy3 { x, y },
-            (0x8, _, _, 0x4) => Opcode::Op8xy4 { x, y },
-            (0x8, _, _, 0x5) => Opcode::Op8xy5 { x, y },
-            (0x8, _, _, 0x6) => Opcode::Op8xy6 { x, y },
-            (0x8, _, _, 0x7) => Opcode::Op8xy7 { x, y },
-            (0x8, _, _, 0xE) => Opcode::Op8xye { x, y },
-            (0x9, _, _, 0x0) => Opcode::Op9xy0 { x, y },
-            (0xA, _, _, _) => Opcode::Opannn { nnn },
-            (0xB, _, _, _) => Opcode::Opbnnn { nnn },
-            (0xC, _, _, _) => Opcode::Opcxkk { x, kk },
-            (0xD, _, _, _) => Opcode::Opdxyn { x, y, n },
-            (0xE, _, 0x9, 0xE) => Opcode::Opex9e { x },
-            (0xE, _, 0xA, 0x1) => Opcode::Opexa1 { x },
-            (0xF, _, 0x0, 0xA) => Opcode::Opfx0a { x },
-            (0xF, _, 0x1, 0x5) => Opcode::Opfx15 { x },
-            (0xF, _, 0x1, 0x8) => Opcode::Opfx18 { x },
-            (0xF, _, 0x1, 0xE) => Opcode::Opfx1e { x },
-            (0xF, _, 0x2, 0x9) => Opcode::Opfx29 { x },
-            (0xF, _, 0x3, 0x3) => Opcode::Opfx33 { x },
-            (0xF, _, 0x5, 0x5) => Opcode::Opfx55 { x },
-            (0xF, _, 0x6, 0x5) => Opcode::Opfx65 { x },
-            (0xF, _, 0x0, 0x7) => Opcode::Opfx07 { x },
+            (0x0, 0x0, 0xE, 0x0) => Instruction::CLS,
+            (0x0, 0x0, 0xE, 0xE) => Instruction::RET,
+            (0x0, _, _, _) => Instruction::SYS(nnn),
+            (0x1, _, _, _) => Instruction::JP(JPType::Addr(nnn)),
+            (0x2, _, _, _) => Instruction::CALL(nnn),
+            (0x3, _, _, _) => Instruction::SE(x, SEType::Byte(kk)),
+            (0x4, _, _, _) => Instruction::SNE(x, SEType::Byte(kk)),
+            (0x5, _, _, 0x0) => Instruction::SE(x, SEType::Reg(y)),
+            (0x6, _, _, _) => Instruction::LD(x, LDType::Byte(kk)),
+            (0x7, _, _, _) => Instruction::ADD(x, AddType::Byte(kk)),
+            (0x8, _, _, 0x0) => Instruction::LD(x, LDType::Reg(y)),
+            (0x8, _, _, 0x1) => Instruction::OR(x, y),
+            (0x8, _, _, 0x2) => Instruction::AND(x, y),
+            (0x8, _, _, 0x3) => Instruction::XOR(x, y),
+            (0x8, _, _, 0x4) => Instruction::ADD(x, AddType::Reg(y)),
+            (0x8, _, _, 0x5) => Instruction::SUB(x, y),
+            (0x8, _, _, 0x6) => Instruction::SHR(x, y),
+            (0x8, _, _, 0x7) => Instruction::SUBN(x, y),
+            (0x8, _, _, 0xE) => Instruction::SHL(x, y),
+            (0x9, _, _, 0x0) => Instruction::SNE(x, SEType::Reg(y)),
+            (0xA, _, _, _) => Instruction::LD(0, LDType::Addr(nnn)),
+            (0xB, _, _, _) => Instruction::JP(JPType::FromV0(nnn)),
+            (0xC, _, _, _) => Instruction::RND(x, kk),
+            (0xD, _, _, _) => Instruction::DRW(x, y, n),
+            (0xE, _, 0x9, 0xE) => Instruction::SKP(x),
+            (0xE, _, 0xA, 0x1) => Instruction::SKNP(x),
+            (0xF, _, 0x0, 0x7) => Instruction::LD(x, LDType::FromDT),
+            (0xF, _, 0x0, 0xA) => Instruction::LD(x, LDType::KeyPress),
+            (0xF, _, 0x1, 0x5) => Instruction::LD(x, LDType::ToDT),
+            (0xF, _, 0x1, 0x8) => Instruction::LD(x, LDType::ToST),
+            (0xF, _, 0x1, 0xE) => Instruction::ADD(x, AddType::I),
+            (0xF, _, 0x2, 0x9) => Instruction::LD(x, LDType::F),
+            (0xF, _, 0x3, 0x3) => Instruction::LD(x, LDType::B),
+            (0xF, _, 0x5, 0x5) => Instruction::LD(x, LDType::ToI),
+            (0xF, _, 0x6, 0x5) => Instruction::LD(x, LDType::FromI),
             _ => return None,
         })
     }
@@ -125,7 +141,7 @@ impl Cpu {
             vx: vec![0; 16],
             st: 60,
             dt: 60,
-            sp: 16,
+            sp: 0,
             kp: vec![false; 16],
 
             height: 32,
@@ -197,43 +213,43 @@ impl Cpu {
         (n1 << 8) | n2
     }
 
-    pub fn execute(&mut self, opcode: Opcode) -> Option<u8> {
-        match opcode {
-            Opcode::Op00e0 => self.op_00e0(),
-            Opcode::Op00ee => self.op_00ee(),
-            Opcode::Op0nnn { nnn } => self.op_0nnn(nnn),
-            Opcode::Op1nnn { nnn } => self.op_1nnn(nnn),
-            Opcode::Op2nnn { nnn } => self.op_2nnn(nnn),
-            Opcode::Op3xkk { x, kk } => self.op_3xkk(x, kk),
-            Opcode::Op4xkk { x, kk } => self.op_4xkk(x, kk),
-            Opcode::Op5xy0 { x, y } => self.op_5xy0(x, y),
-            Opcode::Op6xkk { x, kk } => self.op_6xkk(x, kk),
-            Opcode::Op7xkk { x, kk } => self.op_7xkk(x, kk),
-            Opcode::Op8xy0 { x, y } => self.op_8xy0(x, y),
-            Opcode::Op8xy1 { x, y } => self.op_8xy1(x, y),
-            Opcode::Op8xy2 { x, y } => self.op_8xy2(x, y),
-            Opcode::Op8xy3 { x, y } => self.op_8xy3(x, y),
-            Opcode::Op8xy4 { x, y } => self.op_8xy4(x, y),
-            Opcode::Op8xy5 { x, y } => self.op_8xy5(x, y),
-            Opcode::Op8xy6 { x, y } => self.op_8xy6(x, y),
-            Opcode::Op8xy7 { x, y } => self.op_8xy7(x, y),
-            Opcode::Op8xye { x, y } => self.op_8xye(x, y),
-            Opcode::Op9xy0 { x, y } => self.op_9xy0(x, y),
-            Opcode::Opannn { nnn } => self.op_annn(nnn),
-            Opcode::Opbnnn { nnn } => self.op_bnnn(nnn),
-            Opcode::Opcxkk { x, kk } => self.op_cxkk(x, kk),
-            Opcode::Opdxyn { x, y, n } => self.op_dxyn(x, y, n),
-            Opcode::Opex9e { x } => self.op_ex9e(x),
-            Opcode::Opexa1 { x } => self.op_exa1(x),
-            Opcode::Opfx07 { x } => self.op_fx07(x),
-            Opcode::Opfx0a { x } => self.op_fx0a(x),
-            Opcode::Opfx15 { x } => self.op_fx15(x),
-            Opcode::Opfx18 { x } => self.op_fx18(x),
-            Opcode::Opfx1e { x } => self.op_fx1e(x),
-            Opcode::Opfx29 { x } => self.op_fx29(x),
-            Opcode::Opfx33 { x } => self.op_fx33(x),
-            Opcode::Opfx55 { x } => self.op_fx55(x),
-            Opcode::Opfx65 { x } => self.op_fx65(x),
+    pub fn execute(&mut self, instruction: Instruction) -> Option<u8> {
+        match instruction {
+            Instruction::CLS => self.op_00e0(),
+            Instruction::RET => self.op_00ee(),
+            Instruction::SYS(nnn) => self.op_0nnn(nnn),
+            Instruction::JP(JPType::Addr(nnn)) => self.op_1nnn(nnn),
+            Instruction::CALL(nnn) => self.op_2nnn(nnn),
+            Instruction::SE(x, SEType::Byte(kk)) => self.op_3xkk(x, kk),
+            Instruction::SNE(x, SEType::Byte(kk)) => self.op_4xkk(x, kk),
+            Instruction::SE(x, SEType::Reg(y)) => self.op_5xy0(x, y),
+            Instruction::LD(x, LDType::Byte(kk)) => self.op_6xkk(x, kk),
+            Instruction::ADD(x, AddType::Byte(kk)) => self.op_7xkk(x, kk),
+            Instruction::LD(x, LDType::Reg(y)) => self.op_8xy0(x, y),
+            Instruction::OR(x, y) => self.op_8xy1(x, y),
+            Instruction::AND(x, y) => self.op_8xy2(x, y),
+            Instruction::XOR(x, y) => self.op_8xy3(x, y),
+            Instruction::ADD(x, AddType::Reg(y)) => self.op_8xy4(x, y),
+            Instruction::SUB(x, y) => self.op_8xy5(x, y),
+            Instruction::SHR(x, y) => self.op_8xy6(x, y),
+            Instruction::SUBN(x, y) => self.op_8xy7(x, y),
+            Instruction::SHL(x, y) => self.op_8xye(x, y),
+            Instruction::SNE(x, SEType::Reg(y)) => self.op_9xy0(x, y),
+            Instruction::LD(_, LDType::Addr(nnn)) => self.op_annn(nnn),
+            Instruction::JP(JPType::FromV0(nnn)) => self.op_bnnn(nnn),
+            Instruction::RND(x, kk) => self.op_cxkk(x, kk),
+            Instruction::DRW(x, y, n) => self.op_dxyn(x, y, n),
+            Instruction::SKP(x) => self.op_ex9e(x),
+            Instruction::SKNP(x) => self.op_exa1(x),
+            Instruction::LD(x, LDType::FromDT) => self.op_fx07(x),
+            Instruction::LD(x, LDType::KeyPress) => self.op_fx0a(x),
+            Instruction::LD(x, LDType::ToDT) => self.op_fx15(x),
+            Instruction::LD(x, LDType::ToST) => self.op_fx18(x),
+            Instruction::ADD(x, AddType::I) => self.op_fx1e(x),
+            Instruction::LD(x, LDType::F) => self.op_fx29(x),
+            Instruction::LD(x, LDType::B) => self.op_fx33(x),
+            Instruction::LD(x, LDType::ToI) => self.op_fx55(x),
+            Instruction::LD(x, LDType::FromI) => self.op_fx65(x),
         }
     }
 
@@ -257,7 +273,7 @@ impl Cpu {
 
     fn op_0nnn(&mut self, nnn: u16) -> Option<u8> {
         // SYS addr
-        println!("opcode 0{} is for a system call.", nnn);
+        println!("Instruction 0{} is for a system call.", nnn);
 
         None
     }
@@ -367,6 +383,7 @@ impl Cpu {
         } else {
             0
         };
+
         self.vx[x as usize] = if self.vx[0xF] == 1 {
             self.vx[x as usize] - self.vx[y as usize]
         } else {
@@ -395,6 +412,7 @@ impl Cpu {
         } else {
             0
         };
+
         self.vx[x as usize] = if self.vx[0xF] == 0 {
             self.vx[x as usize] - self.vx[y as usize]
         } else {

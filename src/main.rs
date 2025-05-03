@@ -7,8 +7,7 @@ use tao::keyboard::KeyCode;
 use tao::platform::unix::WindowExtUnix as _;
 use tao::window::WindowBuilder;
 
-use chip8::cpu::Cpu;
-use chip8::cpu::Opcode;
+use chip8::cpu::{Cpu,Instruction};
 
 use std::env;
 use std::sync::Arc;
@@ -330,9 +329,9 @@ fn main() -> Result<(), Error> {
                     return;
                 }
 
-                let instruction = cpu.fetch();
-                let opcode = Opcode::decode(instruction).unwrap();
-                let result = cpu.execute(opcode);
+                let opcode = cpu.fetch();
+                let instruction = Instruction::decode(opcode).unwrap();
+                let result = cpu.execute(instruction);
 
                 if result.is_some() {
                     let val = result.unwrap();
@@ -367,7 +366,7 @@ fn main() -> Result<(), Error> {
 
                     println!("sound timer/delay timer: {}/{}", cpu.st, cpu.dt);
 
-                    println!("processing opcode: {:#x}", instruction);
+                    println!("processing Instruction: {:#x}", opcode);
 
                     println!("--------------------------------------------------");
                 }
@@ -405,7 +404,7 @@ fn main() -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chip8::cpu::Opcode;
+    use chip8::cpu::Instruction;
 
     #[test]
     fn test_fonts() {
@@ -463,9 +462,9 @@ mod tests {
         cpu.ram[0x200] = 0x00;
         cpu.ram[0x201] = 0xe0;
 
-        let instruction = cpu.fetch();
-        let opcode = Opcode::decode(instruction).unwrap();
-        let _ = cpu.execute(opcode);
+        let opcode = cpu.fetch();
+        let ins = Instruction::decode(opcode).unwrap();
+        let _ = cpu.execute(ins);
 
         assert_eq!(cpu.screen, vec![false; 64 * 32]);
     }
@@ -482,9 +481,9 @@ mod tests {
             cpu.ram[0x200] = 0x00;
             cpu.ram[0x201] = 0xee;
 
-            let instruction = cpu.fetch();
-            let opcode = Opcode::decode(instruction).unwrap();
-            let _ = cpu.execute(opcode);
+            let opcode = cpu.fetch();
+            let ins = Instruction::decode(opcode).unwrap();
+            let _ = cpu.execute(ins);
 
             assert_eq!(cpu.pc, ret_addr);
             assert_eq!(cpu.sp, stack_idx - 1);
@@ -497,12 +496,13 @@ mod tests {
         let mut cpu = Cpu::init();
         let jp_addr: u16 = 0x250;
 
-        cpu.ram[0x200] = ((0x1000 | jp_addr) >> 8) as u8;
-        cpu.ram[0x201] = (0x1000 | jp_addr) as u8;
+        let tmp = 0x1000 | jp_addr;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
 
-        let instruction = cpu.fetch();
-        let opcode = Opcode::decode(instruction).unwrap();
-        let _ = cpu.execute(opcode);
+        let opcode = cpu.fetch();
+        let ins = Instruction::decode(opcode).unwrap();
+        let _ = cpu.execute(ins);
 
         assert_eq!(cpu.pc, jp_addr);
     }
@@ -519,9 +519,9 @@ mod tests {
             cpu.ram[0x200] = (tmp >> 8) as u8;
             cpu.ram[0x201] = tmp as u8;
 
-            let instruction = cpu.fetch();
-            let opcode = Opcode::decode(instruction).unwrap();
-            let _ = cpu.execute(opcode);
+            let opcode = cpu.fetch();
+            let ins = Instruction::decode(opcode).unwrap();
+            let _ = cpu.execute(ins);
 
             assert_eq!(cpu.stack[cpu.sp as usize], 0x202);
             assert_eq!(cpu.pc, 0x250);
@@ -542,10 +542,370 @@ mod tests {
         cpu.ram[0x201] = tmp as u8;
 
         let instruction = cpu.fetch();
-        let opcode = Opcode::decode(instruction).unwrap();
-        assert!(matches!(opcode, Opcode::Op3xkk { x: _, kk: _ }));
-        let _ = cpu.execute(opcode);
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
 
         assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_4xkk() {
+        // SNE x, kk
+        let mut cpu = Cpu::init();
+        let kk: u8 = 0x24;
+        let x: u8 = 0x1;
+        cpu.vx[x as usize] = 0x25;
+
+        let tmp: u16 = 0x3000 | ((x as u16) << 8) | (kk as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, 0x202);
+    }
+
+    #[test]
+    fn test_5xy0() {
+        // SE x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let val: u8 = 0x25;
+        cpu.vx[x as usize] = val;
+        cpu.vx[y as usize] = val;
+
+        let tmp: u16 = 0x5000 | ((x as u16) << 8) | ((y as u16) << 4);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_6xkk() {
+        // LD x, kk
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let kk: u8 = 0x25;
+
+        let tmp: u16 = 0x6000 | ((x as u16) << 8) | (kk as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], kk);
+    }
+
+    #[test]
+    fn test_7xkk() {
+        // ADD x, kk
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let kk: u8 = 0x25;
+        let orig: u8 = 0x40;
+        cpu.vx[x as usize] = orig;
+
+        let tmp = 0x7000 | ((x as u16) << 8) | (kk as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], orig + kk);
+    }
+
+    #[test]
+    fn test_8xy0() {
+        // LD x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        cpu.vx[y as usize] = 0x25;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], cpu.vx[y as usize]);
+    }
+
+    #[test]
+    fn test_8xy1() {
+        // OR x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x25;
+        let y_val: u8 = 0x80;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x1;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], x_val | y_val);
+    }
+
+    #[test]
+    fn test_8xy2() {
+        // AND x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x25;
+        let y_val: u8 = 0x80;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x2;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], x_val & y_val);
+    }
+
+    #[test]
+    fn test_8xy3() {
+        // XOR x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x25;
+        let y_val: u8 = 0x80;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x3;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], x_val ^ y_val);
+    }
+
+    #[test]
+    fn test_8xy4() {
+        // ADD x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x01;
+        let y_val: u8 = 0xFF;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+        let sum: u16 = (x_val as u16) + (y_val as u16);
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x4;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], sum as u8);
+        assert_eq!(cpu.vx[0xF] == 1, (0xFF00 & sum) > 1);
+    }
+
+    #[test]
+    fn test_8xy5() {
+        // SUB x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x01;
+        let y_val: u8 = 0xFF;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+        let diff: u16 = if x_val > y_val {
+            (x_val as u16) - (y_val as u16)
+        } else {
+            (y_val as u16) - (x_val as u16)
+        };
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x5;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], diff as u8);
+        assert_eq!(cpu.vx[0xF] == 1, x_val > y_val);
+    }
+
+    #[test]
+    fn test_8xy6() {
+        // SHR x {, y}
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x4;
+        cpu.vx[x as usize] = x_val;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x6;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], x_val >> 1);
+        assert_eq!(cpu.vx[0xF] == 1, x_val.trailing_ones() > 1);
+    }
+
+    #[test]
+    fn test_8xy7() {
+        // SUBN x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0xFF;
+        let y_val: u8 = 0x01;
+        cpu.vx[x as usize] = x_val;
+        cpu.vx[y as usize] = y_val;
+        let diff: u16 = if y_val > x_val {
+            (y_val as u16) - (x_val as u16)
+        } else {
+            (x_val as u16) - (y_val as u16)
+        };
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0x7;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], diff as u8);
+        assert_eq!(cpu.vx[0xF] == 1, y_val > x_val);
+    }
+
+    #[test]
+    fn test_8xye() {
+        // SHL x {, y}
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let x_val: u8 = 0x4;
+        cpu.vx[x as usize] = x_val;
+
+        let tmp = 0x8000 | ((x as u16) << 8) | ((y as u16) << 4) | 0xE;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], x_val << 1);
+        assert_eq!(cpu.vx[0xF] == 1, x_val.leading_ones() > 1);
+    }
+
+    #[test]
+    fn test_9xy0() {
+        // SNE x, y
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        let val: u8 = 0x25;
+        cpu.vx[x as usize] = val;
+        cpu.vx[y as usize] = val + 1;
+
+        let tmp: u16 = 0x9000 | ((x as u16) << 8) | ((y as u16) << 4);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_annn() {
+        // LD I, addr
+        let mut cpu = Cpu::init();
+        let addr: u16 = 0x250;
+
+        let tmp: u16 = 0xA000 | addr;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ir, addr);
+    }
+
+    #[test]
+    fn test_bnnn() {
+        // JP V0, addr
+        let mut cpu = Cpu::init();
+        cpu.vx[0x0] = 0x25;
+        let addr: u16 = 0x250;
+
+        let tmp: u16 = 0xB000 | addr;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, (cpu.vx[0x0] as u16) + addr);
+    }
+
+    #[test]
+    fn test_cxkk() {
+        // RND x, kk
+        let mut cpu = Cpu::init();
+        let x: u8 = 0xF;
+        let kk: u8 = 0xFF;
+        let val: u8 = 0xF;
+        cpu.vx[x as usize] = val;
+
+        let tmp: u16 = 0xC000 | (x as u16) << 8 | (kk as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], 0);
     }
 }
