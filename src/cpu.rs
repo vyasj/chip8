@@ -111,6 +111,46 @@ impl Instruction {
             _ => return None,
         })
     }
+
+    pub fn print_name(ins: &Self) -> &str {
+        match ins {
+            Self::CLS => "CLS",
+            Self::RET => "RET",
+            Self::SYS(_) => "SYS",
+            Self::JP(JPType::Addr(nnn)) => "JP nnn",
+            Self::JP(JPType::FromV0(nnn)) => "JP V0 + nnn",
+            Self::CALL(nnn) => "CALL nnn",
+            Self::SE(x, SEType::Byte(kk)) => "SE Vx, kk",
+            Self::SE(x, SEType::Reg(y)) => "SE Vx, Vy",
+            Self::SNE(x, SEType::Byte(kk)) => "SNE Vx, kk",
+            Self::SNE(x, SEType::Reg(y)) => "SNE Vx, Vy",
+            Self::LD(_, LDType::Addr(nnn)) => "LD I, nnn",
+            Self::LD(x, LDType::B) => "LD B, Vx",
+            Self::LD(x, LDType::Byte(kk)) => "LD Vx, kk",
+            Self::LD(x, LDType::F) => "LD F, Vx",
+            Self::LD(x, LDType::FromDT) => "LD Vx, DT",
+            Self::LD(x, LDType::FromI) => "LD Vx, I",
+            Self::LD(x, LDType::KeyPress) => "LD Vx, K",
+            Self::LD(x, LDType::Reg(y)) => "LD Vx, Vy",
+            Self::LD(x, LDType::ToDT) => "LD DT, Vx",
+            Self::LD(x, LDType::ToI) => "LD I, Vx",
+            Self::LD(x, LDType::ToST) => "LD ST, Vx",
+            Self::ADD(x, AddType::Byte(kk)) => "ADD Vx, kk",
+            Self::ADD(x, AddType::I) => "ADD Vx, I",
+            Self::ADD(x, AddType::Reg(y)) => "ADD Vx, Vy",
+            Self::OR(x, y) => "OR Vx, Vy",
+            Self::AND(x, y) => "AND Vx, Vy",
+            Self::XOR(x, y) => "XOR Vx, Vy",
+            Self::SUB(x, y) => "SUB Vx, Vy",
+            Self::SHR(x, y) => "SHR Vx {, Vy}",
+            Self::SUBN(x, y) => "SUBN Vx, Vy",
+            Self::SHL(x, y) => "SHL Vx {, Vy}",
+            Self::RND(x, kk) => "RND Vx, kk",
+            Self::DRW(x, y, n) => "DRW Vx, Vy, nibble",
+            Self::SKP(x) => "SKP Vx",
+            Self::SKNP(x) => "SKNP Vx",
+        }
+    }
 }
 
 pub struct Cpu {
@@ -473,7 +513,8 @@ impl Cpu {
             for j in 0..8 {
                 if (sprite_byte << j) & 0x80 != 0 {
                     let counter_x = (self.vx[x as usize] as usize + j) % (self.width as usize);
-                    let counter_y = (self.vx[y as usize] as usize + i as usize) % (self.height as usize);
+                    let counter_y =
+                        (self.vx[y as usize] as usize + i as usize) % (self.height as usize);
                     let screen_idx = counter_y * (self.width as usize) + counter_x;
 
                     if self.screen[screen_idx as usize] {
