@@ -908,4 +908,31 @@ mod tests {
 
         assert_eq!(cpu.vx[x as usize], 0);
     }
+
+    #[test]
+    fn test_dxyn() {
+        // DRW x, y, n
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let y: u8 = 0xA;
+        cpu.vx[x as usize] = 0x5;
+        cpu.vx[y as usize] = 0x7;
+        cpu.ir = 0x250;
+        let n: u8 = 2;
+
+        let tmp: u16 = 0xD000 | ((x as u16) << 8) | ((y as u16) << 4) | (n as u16);
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+        for i in 0..n {
+            cpu.ram[(cpu.ir + i as u16) as usize] = i;
+        }
+        cpu.screen[0x20C] = true;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[0xF], 1);
+        assert_eq!(cpu.screen[0x20C], false);
+    }
 }

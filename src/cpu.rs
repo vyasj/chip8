@@ -472,8 +472,8 @@ impl Cpu {
 
             for j in 0..8 {
                 if (sprite_byte << j) & 0x80 != 0 {
-                    let counter_x = (x as usize + j) % (self.width as usize);
-                    let counter_y = (y as usize + i as usize) % (self.height as usize);
+                    let counter_x = (self.vx[x as usize] as usize + j) % (self.width as usize);
+                    let counter_y = (self.vx[y as usize] as usize + i as usize) % (self.height as usize);
                     let screen_idx = counter_y * (self.width as usize) + counter_x;
 
                     if self.screen[screen_idx as usize] {
