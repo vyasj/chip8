@@ -935,4 +935,217 @@ mod tests {
         assert_eq!(cpu.vx[0xF], 1);
         assert_eq!(cpu.screen[0x20C], false);
     }
+
+    #[test]
+    fn test_ex9e() {
+        // SKP x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let key: u8 = 0x5;
+        cpu.vx[x as usize] = key;
+        cpu.kp[key as usize] = true;
+
+        let tmp: u16 = 0xE000 | ((x as u16) << 8) | 0x9E;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_exa1() {
+        // SKNP x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let key: u8 = 0x5;
+        cpu.vx[x as usize] = key;
+        cpu.kp[(key - 1) as usize] = true;
+
+        let tmp: u16 = 0xE000 | ((x as u16) << 8) | 0xA1;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.pc, 0x204);
+    }
+
+    #[test]
+    fn test_fx07() {
+        // LD x, dt
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        cpu.dt = 0x25;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x7;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], cpu.dt);
+    }
+
+    #[test]
+    fn test_fx0a() {
+        // LD x, kp
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let key: u8 = 0x5;
+        cpu.kp[key as usize] = true;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0xA;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], key);
+    }
+
+    #[test]
+    fn test_fx15() {
+        // LD dt, x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        cpu.dt = 0x25;
+        
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x15;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], cpu.dt);
+    }
+
+    #[test]
+    fn test_fx18() {
+        // LD st, x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        cpu.st = 0x25;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x18;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.vx[x as usize], cpu.st);
+    }
+
+    #[test]
+    fn test_fx1e() {
+        // ADD ir, x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        let initial_ir: u16 = 0xF01E;
+        cpu.ir = initial_ir;
+        cpu.vx[x as usize] = 0x25;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x1E;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ir, (cpu.vx[x as usize] as u16) + initial_ir);
+    }
+
+    #[test]
+    fn test_fx29() {
+        // LD F, vx
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        cpu.vx[x as usize] = 0x25;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x29;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ir, (cpu.vx[x as usize] as u16) * 5);
+    }
+
+    #[test]
+    fn test_fx33() {
+        // LD B, x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x1;
+        cpu.vx[x as usize] = 137;
+        cpu.ir = 0x250;
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x33;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ram[cpu.ir as usize], 1);
+        assert_eq!(cpu.ram[(cpu.ir+1) as usize], 3);
+        assert_eq!(cpu.ram[(cpu.ir+2) as usize], 7);
+    }
+
+    #[test]
+    fn test_fx55() {
+        // LD [ir], x
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x5;
+        for i in 0..x {
+            cpu.vx[i as usize] = i * 16;
+        }
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x55;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ram[(cpu.ir as usize)..=((cpu.ir + (x as u16)) as usize)], cpu.vx[0..=(x as usize)]);
+    }
+
+    #[test]
+    fn test_fx65() {
+        // LD x, [ir]
+        let mut cpu = Cpu::init();
+        let x: u8 = 0x5;
+        cpu.ir = 0x250;
+        for i in 0..x {
+            cpu.ram[(cpu.ir as usize) + (i as usize)] = i * 16;
+        }
+
+        let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x65;
+        cpu.ram[0x200] = (tmp >> 8) as u8;
+        cpu.ram[0x201] = tmp as u8;
+
+        let instruction = cpu.fetch();
+        let ins = Instruction::decode(instruction).unwrap();
+        let _ = cpu.execute(ins);
+
+        assert_eq!(cpu.ram[(cpu.ir as usize)..=((cpu.ir + (x as u16)) as usize)], cpu.vx[0..=(x as usize)]);
+    }
 }
