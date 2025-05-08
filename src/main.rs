@@ -23,6 +23,7 @@ fn main() -> Result<(), Error> {
 
     println!("Loading rom...");
     cpu.load_rom(&filename);
+    cpu.print_ram();
 
     println!("Rendering display window...");
     let event_loop = EventLoop::new();
@@ -342,33 +343,6 @@ fn main() -> Result<(), Error> {
                         // Wait for key press
                         *control_flow = ControlFlow::Wait;
                     }
-                }
-
-                if debug_mode {
-                    println!("--------------------------------------------------");
-                    println!("program counter: {}", cpu.pc);
-
-                    println!("stack pointer: {}", cpu.sp);
-
-                    println!("index register: {}", cpu.ir);
-
-                    print!("stack: ");
-                    for idx in 0..cpu.stack.len() {
-                        print!("|{}", cpu.stack[idx]);
-                    }
-                    println!("|");
-
-                    print!("v registers: ");
-                    for idx in 0..cpu.vx.len() {
-                        print!("|{}", cpu.vx[idx]);
-                    }
-                    println!("|");
-
-                    println!("sound timer/delay timer: {}/{}", cpu.st, cpu.dt);
-
-                    println!("processing Instruction: {:#x}", opcode);
-
-                    println!("--------------------------------------------------");
                 }
 
                 if cpu.dt > 0 {

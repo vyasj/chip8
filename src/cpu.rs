@@ -112,44 +112,44 @@ impl Instruction {
         })
     }
 
-    pub fn print_name(ins: &Self) -> &str {
+    pub fn print_name(ins: &Self) {
         match ins {
-            Self::CLS => "CLS",
-            Self::RET => "RET",
-            Self::SYS(_) => "SYS",
-            Self::JP(JPType::Addr(nnn)) => "JP nnn",
-            Self::JP(JPType::FromV0(nnn)) => "JP V0 + nnn",
-            Self::CALL(nnn) => "CALL nnn",
-            Self::SE(x, SEType::Byte(kk)) => "SE Vx, kk",
-            Self::SE(x, SEType::Reg(y)) => "SE Vx, Vy",
-            Self::SNE(x, SEType::Byte(kk)) => "SNE Vx, kk",
-            Self::SNE(x, SEType::Reg(y)) => "SNE Vx, Vy",
-            Self::LD(_, LDType::Addr(nnn)) => "LD I, nnn",
-            Self::LD(x, LDType::B) => "LD B, Vx",
-            Self::LD(x, LDType::Byte(kk)) => "LD Vx, kk",
-            Self::LD(x, LDType::F) => "LD F, Vx",
-            Self::LD(x, LDType::FromDT) => "LD Vx, DT",
-            Self::LD(x, LDType::FromI) => "LD Vx, I",
-            Self::LD(x, LDType::KeyPress) => "LD Vx, K",
-            Self::LD(x, LDType::Reg(y)) => "LD Vx, Vy",
-            Self::LD(x, LDType::ToDT) => "LD DT, Vx",
-            Self::LD(x, LDType::ToI) => "LD I, Vx",
-            Self::LD(x, LDType::ToST) => "LD ST, Vx",
-            Self::ADD(x, AddType::Byte(kk)) => "ADD Vx, kk",
-            Self::ADD(x, AddType::I) => "ADD Vx, I",
-            Self::ADD(x, AddType::Reg(y)) => "ADD Vx, Vy",
-            Self::OR(x, y) => "OR Vx, Vy",
-            Self::AND(x, y) => "AND Vx, Vy",
-            Self::XOR(x, y) => "XOR Vx, Vy",
-            Self::SUB(x, y) => "SUB Vx, Vy",
-            Self::SHR(x, y) => "SHR Vx {, Vy}",
-            Self::SUBN(x, y) => "SUBN Vx, Vy",
-            Self::SHL(x, y) => "SHL Vx {, Vy}",
-            Self::RND(x, kk) => "RND Vx, kk",
-            Self::DRW(x, y, n) => "DRW Vx, Vy, nibble",
-            Self::SKP(x) => "SKP Vx",
-            Self::SKNP(x) => "SKNP Vx",
-        }
+            Self::CLS => println!("CLS"),
+            Self::RET => println!("RET"),
+            Self::SYS(nnn) => println!("SYS {:#x}", nnn),
+            Self::JP(JPType::Addr(nnn)) => println!("JP {:#x}", nnn),
+            Self::JP(JPType::FromV0(nnn)) => println!("JP V0 + {:#x}", nnn),
+            Self::CALL(nnn) => println!("CALL {:#x}", nnn),
+            Self::SE(x, SEType::Byte(kk)) => println!("SE V{:#x}, {:#x}", x, kk),
+            Self::SE(x, SEType::Reg(y)) => println!("SE V{:#x}, V{:#x}", x, y),
+            Self::SNE(x, SEType::Byte(kk)) => println!("SNE V{:#x}, {:#x}", x, kk),
+            Self::SNE(x, SEType::Reg(y)) => println!("SNE V{:#x}, V{:#x}", x, y),
+            Self::LD(_, LDType::Addr(nnn)) => println!("LD I, {:x}", nnn),
+            Self::LD(x, LDType::B) => println!("LD B, V{:#x}", x),
+            Self::LD(x, LDType::Byte(kk)) => println!("LD V{:#x}, {:#x}", x, kk),
+            Self::LD(x, LDType::F) => println!("LD F, V{:#x}", x),
+            Self::LD(x, LDType::FromDT) => println!("LD V{:#x}, DT", x),
+            Self::LD(x, LDType::FromI) => println!("LD V{:#x}, [I]", x),
+            Self::LD(x, LDType::KeyPress) => println!("LD V{:#x}, K", x),
+            Self::LD(x, LDType::Reg(y)) => println!("LD V{:#x}, V{:#x}", x, y),
+            Self::LD(x, LDType::ToDT) => println!("LD DT, V{:#x}", x),
+            Self::LD(x, LDType::ToI) => println!("LD [I], V{:#x}", x),
+            Self::LD(x, LDType::ToST) => println!("LD ST, V{:#x}", x),
+            Self::ADD(x, AddType::Byte(kk)) => println!("ADD V{:#x}, {:#x}", x, kk),
+            Self::ADD(x, AddType::I) => println!("ADD V{:#x}, I", x),
+            Self::ADD(x, AddType::Reg(y)) => println!("ADD V{:#x}, V{:#x}", x, y),
+            Self::OR(x, y) => println!("OR V{:#x}, V{:#x}", x, y),
+            Self::AND(x, y) => println!("AND V{:#x}, V{:#x}", x, y),
+            Self::XOR(x, y) => println!("XOR V{:#x}, V{:#x}", x, y),
+            Self::SUB(x, y) => println!("SUB V{:#x}, V{:#x}", x, y),
+            Self::SHR(x, y) => println!("SHR V{:#x} {{, V{:#x}}}", x, y),
+            Self::SUBN(x, y) => println!("SUBN V{:#x}, V{:#x}", x, y),
+            Self::SHL(x, y) => println!("SHL V{:#x} {{, V{:#x}}}", x, y),
+            Self::RND(x, kk) => println!("RND V{:#x}, {:#x}", x, kk),
+            Self::DRW(x, y, n) => println!("DRW V{:#x}, V{:#x}, {:#x}", x, y, n),
+            Self::SKP(x) => println!("SKP V{:#x}", x),
+            Self::SKNP(x) => println!("SKNP V{:#x}", x),
+        };
     }
 }
 
@@ -228,6 +228,27 @@ impl Cpu {
             let byte = byte_or_error.unwrap();
             self.ram[ram_addr] = byte;
             ram_addr += 1;
+        }
+    }
+
+    pub fn print_ram(&mut self) {
+        self.pc = 0x200;
+        let mut line_num: u16 = 1;
+        
+        loop {
+            if self.pc as usize >= self.ram.len() {
+                break;
+            }
+
+            if self.ram[self.pc as usize] == 0x0000 {
+                break;
+            }
+
+            let bytes = self.fetch();
+            let ins = Instruction::decode(bytes).unwrap();
+            print!("{}  ", line_num);
+            Instruction::print_name(&ins);
+            line_num += 1;
         }
     }
 
