@@ -124,7 +124,7 @@ impl Instruction {
             Self::SE(x, SEType::Reg(y)) => println!("SE V{:#x}, V{:#x}", x, y),
             Self::SNE(x, SEType::Byte(kk)) => println!("SNE V{:#x}, {:#x}", x, kk),
             Self::SNE(x, SEType::Reg(y)) => println!("SNE V{:#x}, V{:#x}", x, y),
-            Self::LD(_, LDType::Addr(nnn)) => println!("LD I, {:x}", nnn),
+            Self::LD(_, LDType::Addr(nnn)) => println!("LD I, {:#x}", nnn),
             Self::LD(x, LDType::B) => println!("LD B, V{:#x}", x),
             Self::LD(x, LDType::Byte(kk)) => println!("LD V{:#x}, {:#x}", x, kk),
             Self::LD(x, LDType::F) => println!("LD F, V{:#x}", x),
@@ -233,23 +233,40 @@ impl Cpu {
 
     pub fn print_ram(&mut self) {
         self.pc = 0x200;
-        let mut line_num: u16 = 1;
-        
-        loop {
-            if self.pc as usize >= self.ram.len() {
-                break;
-            }
 
-            if self.ram[self.pc as usize] == 0x0000 {
-                break;
-            }
+        loop {
+            if self.pc as usize >= self.ram.len() { break; }
+
+            let b1 = self.ram[self.pc as usize] as u16;
+            let b2 = self.ram[(self.pc + 1) as usize] as u16;
+            print!("{:#06x}\t({:#06x})\t", self.pc, (b1 << 8) | b2);
 
             let bytes = self.fetch();
-            let ins = Instruction::decode(bytes).unwrap();
-            print!("{}  ", line_num);
-            Instruction::print_name(&ins);
-            line_num += 1;
+            if bytes == 0x0000 { break; }
+
+            let ins = Instruction::decode(bytes);
+
+            if ins.is_some() {
+                Instruction::print_name(&(ins.unwrap()));
+            }
         }
+        
+        self.pc = 0x200;
+    }
+
+    pub fn dump_state(&self) {
+        println!("\nregisters:");
+        for i in 0..self.vx.len() {
+            println!("V{:#x}: {:#x}", i, self.vx[i]);
+        }
+
+        println!("\nstack:");
+        for i in 0..self.stack.len() {
+            println!("V{:#x}: {:#x}", i, self.vx[i]);
+        }
+
+        println!("\nprogram counter: {:#x}", self.pc);
+        println!("index register: {:#x}", self.ir);
     }
 
     pub fn draw(&self, frame: &mut [u8]) {
@@ -326,7 +343,6 @@ impl Cpu {
     fn op_00ee(&mut self) -> Option<u8> {
         // RET
         self.pc = self.stack[self.sp as usize];
-        self.stack[self.sp as usize] = 0;
         self.sp -= 1;
 
         None
@@ -334,7 +350,7 @@ impl Cpu {
 
     fn op_0nnn(&mut self, nnn: u16) -> Option<u8> {
         // SYS addr
-        println!("Instruction 0{} is for a system call.", nnn);
+        println!("Instruction {:#x} is for a system call.", nnn);
 
         None
     }
@@ -347,7 +363,7 @@ impl Cpu {
     }
 
     fn op_2nnn(&mut self, nnn: u16) -> Option<u8> {
-        // JSR addr
+        // CALL addr
         self.sp += 1;
         self.stack[self.sp as usize] = self.pc;
         self.pc = nnn;

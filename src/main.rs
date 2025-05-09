@@ -327,11 +327,19 @@ fn main() -> Result<(), Error> {
             Event::MainEventsCleared => {
                 if cpu.pc as usize >= cpu.ram.len() {
                     println!("reached end of ram.");
-                    return;
+                    cpu.dump_state();
+                    std::process::exit(0x0100);
                 }
 
-                let opcode = cpu.fetch();
-                let instruction = Instruction::decode(opcode).unwrap();
+                if cpu.ram[cpu.pc as usize] == 0x00 && cpu.ram[(cpu.pc + 1) as usize] == 0x00 {
+                    println!("hit raw 0x0000");
+                    cpu.dump_state();
+                    std::process::exit(0x0100);
+                }
+
+                let bytes = cpu.fetch();
+                let instruction = Instruction::decode(bytes).unwrap();
+                Instruction::print_name(&instruction);
                 let result = cpu.execute(instruction);
 
                 if result.is_some() {
@@ -483,7 +491,7 @@ mod tests {
 
     #[test]
     fn test_2nnn() {
-        // JSR addr
+        // CALL addr
         for stack_idx in 0..=14 {
             let mut cpu = Cpu::init();
             let sr_addr: u16 = 0x250;
