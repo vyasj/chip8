@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
 
     println!("Loading rom...");
     cpu.load_rom(&filename);
-    cpu.print_ram();
+    // cpu.print_ram();
 
     println!("Rendering display window...");
     let event_loop = EventLoop::new();
@@ -339,7 +339,7 @@ fn main() -> Result<(), Error> {
 
                 let bytes = cpu.fetch();
                 let instruction = Instruction::decode(bytes).unwrap();
-                Instruction::print_name(&instruction);
+                // Instruction::print_name(&instruction);
                 let result = cpu.execute(instruction);
 
                 if result.is_some() {

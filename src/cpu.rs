@@ -250,7 +250,7 @@ impl Cpu {
                 Instruction::print_name(&(ins.unwrap()));
             }
         }
-        
+
         self.pc = 0x200;
     }
 
@@ -407,7 +407,7 @@ impl Cpu {
 
     fn op_7xkk(&mut self, x: u8, kk: u8) -> Option<u8> {
         // ADD x, kk
-        self.vx[x as usize] += kk;
+        self.vx[x as usize] = self.vx[x as usize].wrapping_add(kk);
 
         None
     }
