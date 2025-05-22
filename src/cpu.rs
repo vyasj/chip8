@@ -55,6 +55,7 @@ pub enum Instruction {
     DRW(u8, u8, u8),
     SKP(u8),
     SKNP(u8),
+    RAW0,
 }
 
 impl Instruction {
@@ -73,6 +74,7 @@ impl Instruction {
         let y = ((0x00F0 & instruction) >> 4) as u8;
 
         Some(match nibbles {
+            (0x0, 0x0, 0x0, 0x0) => Instruction::RAW0,
             (0x0, 0x0, 0xE, 0x0) => Instruction::CLS,
             (0x0, 0x0, 0xE, 0xE) => Instruction::RET,
             (0x0, _, _, _) => Instruction::SYS(nnn),
@@ -114,6 +116,7 @@ impl Instruction {
 
     pub fn print_name(ins: &Self) {
         match ins {
+            Self::RAW0 => println!("RAW0"),
             Self::CLS => println!("CLS"),
             Self::RET => println!("RET"),
             Self::SYS(nnn) => println!("SYS {:#x}", nnn),
@@ -293,6 +296,7 @@ impl Cpu {
 
     pub fn execute(&mut self, instruction: Instruction) -> Option<u8> {
         match instruction {
+            Instruction::RAW0 => None,
             Instruction::CLS => self.op_00e0(),
             Instruction::RET => self.op_00ee(),
             Instruction::SYS(nnn) => self.op_0nnn(nnn),
@@ -544,6 +548,7 @@ impl Cpu {
 
     fn op_dxyn(&mut self, x: u8, y: u8, n: u8) -> Option<u8> {
         // DRW x, y, n
+        self.vx[0xF] = 0;
         for i in 0..n {
             let sprite_byte: u8 = self.ram[(self.ir + i as u16) as usize];
 
@@ -551,12 +556,12 @@ impl Cpu {
                 if (sprite_byte << j) & 0x80 != 0 {
                     let counter_x = ((self.vx[x as usize] + j) % (self.width)) as usize;
                     let counter_y = ((self.vx[y as usize] + i) % (self.height)) as usize;
-                    let screen_idx = counter_y * (self.width as usize) + counter_x;
+                    let screen_idx = (counter_y * self.width as usize) + counter_x;
 
-                    if self.screen[screen_idx as usize] {
+                    if self.screen[screen_idx] {
                         self.vx[0xF] = 1;
                     }
-                    self.screen[screen_idx as usize] ^= true;
+                    self.screen[screen_idx] ^= true;
                 }
             }
         }

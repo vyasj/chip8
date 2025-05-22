@@ -55,8 +55,6 @@ fn main() -> Result<(), Error> {
     menu.init_for_gtk_window(window.gtk_window(), window.default_vbox())
         .unwrap();
 
-    let mut debug_mode = false;
-
     event_loop.run(move |event, _, control_flow| {
         match event {
             Event::WindowEvent { event, .. } => match event {
@@ -82,8 +80,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x1] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -96,8 +93,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x2] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -110,8 +106,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x3] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -124,8 +119,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xC] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -138,8 +132,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x4] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -152,8 +145,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x5] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -166,8 +158,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x6] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -180,8 +171,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xD] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -194,8 +184,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x7] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -208,8 +197,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x8] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -222,8 +210,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0x9] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -236,8 +223,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xE] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -250,8 +236,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xA] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -264,8 +249,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -278,8 +262,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xB] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -292,8 +275,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0xF] = true;
-                    debug_mode = false;
-                    *control_flow = ControlFlow::Poll;
+                    *control_flow = ControlFlow::Wait;
                 }
 
                 WindowEvent::Resized(size) => {
@@ -301,22 +283,6 @@ fn main() -> Result<(), Error> {
                         println!("{}", err);
                         *control_flow = ControlFlow::Exit;
                     }
-                }
-
-                WindowEvent::KeyboardInput {
-                    event:
-                        KeyEvent {
-                            physical_key: KeyCode::KeyJ,
-                            state: ElementState::Pressed,
-                            ..
-                        },
-                    ..
-                } => {
-                    if !debug_mode {
-                        println!("entering debug mode. press any other key to continue.");
-                    }
-                    debug_mode = true;
-                    *control_flow = ControlFlow::Wait;
                 }
 
                 _ => {
@@ -331,13 +297,14 @@ fn main() -> Result<(), Error> {
                     std::process::exit(0x0100);
                 }
 
-                if cpu.ram[cpu.pc as usize] == 0x00 && cpu.ram[(cpu.pc + 1) as usize] == 0x00 {
+                let bytes = cpu.fetch();
+
+                if bytes == 0 {
                     println!("hit raw 0x0000");
                     cpu.dump_state();
                     std::process::exit(0x0100);
                 }
 
-                let bytes = cpu.fetch();
                 let instruction = Instruction::decode(bytes).unwrap();
                 // Instruction::print_name(&instruction);
                 let result = cpu.execute(instruction);
@@ -362,6 +329,8 @@ fn main() -> Result<(), Error> {
                 }
 
                 cpu.kp = vec![false; 16];
+
+                *control_flow = ControlFlow::Poll;
             }
 
             Event::RedrawRequested(_) => {
@@ -536,9 +505,9 @@ mod tests {
         let mut cpu = Cpu::init();
         let kk: u8 = 0x24;
         let x: u8 = 0x1;
-        cpu.vx[x as usize] = 0x25;
+        cpu.vx[x as usize] = kk + 1;
 
-        let tmp: u16 = 0x3000 | ((x as u16) << 8) | (kk as u16);
+        let tmp: u16 = 0x4000 | ((x as u16) << 8) | (kk as u16);
         cpu.ram[0x200] = (tmp >> 8) as u8;
         cpu.ram[0x201] = tmp as u8;
 
@@ -546,7 +515,7 @@ mod tests {
         let ins = Instruction::decode(instruction).unwrap();
         let _ = cpu.execute(ins);
 
-        assert_eq!(cpu.pc, 0x202);
+        assert_eq!(cpu.pc, 0x204);
     }
 
     #[test]
@@ -723,8 +692,8 @@ mod tests {
         let mut cpu = Cpu::init();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
-        let x_val: u8 = 0x01;
-        let y_val: u8 = 0xFF;
+        let x_val: u8 = 0x05;
+        let y_val: u8 = 0xC0;
         cpu.vx[x as usize] = x_val;
         cpu.vx[y as usize] = y_val;
         let diff: u16 = if x_val > y_val {
