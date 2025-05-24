@@ -59,15 +59,16 @@ fn main() -> Result<(), Error> {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => {
+                    cpu.dump_state();
                     *control_flow = ControlFlow::Exit;
                 }
 
                 WindowEvent::KeyboardInput { event: inner, .. } => {
                     let key = inner.physical_key;
                     if key == KeyCode::Escape {
+                        cpu.dump_state();
                         *control_flow = ControlFlow::Exit;
-                    }
-                    else {
+                    } else {
                         let keycode = match key {
                             KeyCode::Digit1 => 0x1,
                             KeyCode::Digit2 => 0x2,
@@ -161,6 +162,7 @@ fn main() -> Result<(), Error> {
             _ => {
                 if let Ok(event) = MenuEvent::receiver().try_recv() {
                     if event.id.0 == "quit" {
+                        cpu.dump_state();
                         *control_flow = ControlFlow::Exit;
                     }
                 }

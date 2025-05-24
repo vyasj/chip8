@@ -265,16 +265,23 @@ impl Cpu {
     pub fn dump_state(&self) {
         println!("\nregisters:");
         for i in 0..self.vx.len() {
-            println!("V{:#x}: {:#x}", i, self.vx[i]);
+            println!("V{} | {:#x} | ", i, self.vx[i]);
         }
 
         println!("\nstack:");
         for i in 0..self.stack.len() {
-            println!("V{:#x}: {:#x}", i, self.vx[i]);
+            println!("V{} | {:#x} | ", i, self.stack[i]);
         }
 
         println!("\nprogram counter: {:#x}", self.pc);
-        println!("index register: {:#x}", self.ir);
+        println!("\nindex register: {:#x}", self.ir);
+
+        println!("\nkeypad:");
+        for i in 0..self.kp.len() {
+            println!("V{} | {} | ", i, self.kp[i]);
+        }
+
+        println!("");
     }
 
     pub fn draw(&self, frame: &mut [u8]) {
