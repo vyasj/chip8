@@ -79,8 +79,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x1] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -92,8 +93,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x2] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -105,8 +107,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x3] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -118,8 +121,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xC] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -131,8 +135,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x4] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -144,8 +149,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x5] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -157,8 +163,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x6] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -170,8 +177,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xD] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -183,8 +191,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x7] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -196,8 +205,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x8] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -209,8 +219,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0x9] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -222,8 +233,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xE] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -235,8 +247,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xA] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -249,7 +262,7 @@ fn main() -> Result<(), Error> {
                     ..
                 } => {
                     cpu.kp[0] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -261,8 +274,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xB] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::KeyboardInput {
@@ -274,8 +288,9 @@ fn main() -> Result<(), Error> {
                         },
                     ..
                 } => {
+                    cpu.kp = vec![false; 16];
                     cpu.kp[0xF] = true;
-                    *control_flow = ControlFlow::Wait;
+                    *control_flow = ControlFlow::Poll;
                 }
 
                 WindowEvent::Resized(size) => {
@@ -310,14 +325,15 @@ fn main() -> Result<(), Error> {
                 let result = cpu.execute(instruction);
 
                 if result.is_some() {
-                    let val = result.unwrap();
-                    if val == 1 {
-                        // Request redraw from window
-                        window.request_redraw();
-                    } else if val == 2 {
-                        // Wait for key press
-                        *control_flow = ControlFlow::Wait;
-                    }
+                    match result.unwrap() {
+                        1 => window.request_redraw(),
+                        2 => *control_flow = ControlFlow::Wait,
+                        _ => {
+                            println!("unknown return value from cpu.execute(), aborting...");
+                            cpu.dump_state();
+                            std::process::exit(0x0100);
+                        }
+                    };
                 }
 
                 if cpu.dt > 0 {
@@ -328,7 +344,7 @@ fn main() -> Result<(), Error> {
                     cpu.st -= 1;
                 }
 
-                cpu.kp = vec![false; 16];
+                // cpu.kp = vec![false; 16];
 
                 *control_flow = ControlFlow::Poll;
             }

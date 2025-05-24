@@ -235,6 +235,7 @@ impl Cpu {
     }
 
     pub fn print_ram(&mut self) {
+        let start_pc = self.pc;
         self.pc = 0x200;
 
         loop {
@@ -254,7 +255,7 @@ impl Cpu {
             }
         }
 
-        self.pc = 0x200;
+        self.pc = start_pc;
     }
 
     pub fn dump_state(&self) {
@@ -566,7 +567,7 @@ impl Cpu {
             }
         }
 
-        // returning 1 is understood as a draw instruction, so the main() loop
+        // returning 1 is understood as a call to draw, so the main() loop
         // knows to request the game window for a redraw
         Some(1)
     }
@@ -601,17 +602,16 @@ impl Cpu {
     fn op_fx0a(&mut self, x: u8) -> Option<u8> {
         // LD x, KP
         let key_pos = self.kp.iter().position(|&x| x == true);
-        let res: Option<u8>;
         if key_pos.is_some() {
             self.vx[x as usize] = key_pos.unwrap() as u8;
-            res = None;
-        } else {
-            // returning 2 is understood as a wait instruction, so the main()
-            // loop knows to halt the control flow and wait for another key press
-            res = Some(2);
-        }
 
-        res
+            None
+        } else {
+            // returning 2 is understood as a call to wait, so the main() loop
+            // knows to halt the control flow and wait for another key press
+            
+            Some(2)
+        }
     }
 
     fn op_fx15(&mut self, x: u8) -> Option<u8> {
