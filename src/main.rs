@@ -125,7 +125,7 @@ fn main() -> Result<(), Error> {
                 }
 
                 let instruction = Instruction::decode(bytes).unwrap();
-                // Instruction::print_name(&instruction);
+                // println!("{}", instruction.to_string());
                 let result = cpu.execute(instruction);
 
                 if result.is_some() {

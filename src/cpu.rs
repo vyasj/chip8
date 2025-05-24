@@ -58,6 +58,49 @@ pub enum Instruction {
     RAW0,
 }
 
+impl ToString for Instruction {
+    fn to_string(&self) -> String {
+        match self {
+            Self::RAW0 => "RAW0".to_string(),
+            Self::CLS => "CLS".to_string(),
+            Self::RET => "RET".to_string(),
+            Self::SYS(nnn) => format!("SYS {:#x}", nnn),
+            Self::JP(JPType::Addr(nnn)) => format!("JP {:#x}", nnn),
+            Self::JP(JPType::FromV0(nnn)) => format!("JP V0 + {:#x}", nnn),
+            Self::CALL(nnn) => format!("CALL {:#x}", nnn),
+            Self::SE(x, SEType::Byte(kk)) => format!("SE V{:#x}, {:#x}", x, kk),
+            Self::SE(x, SEType::Reg(y)) => format!("SE V{:#x}, V{:#x}", x, y),
+            Self::SNE(x, SEType::Byte(kk)) => format!("SNE V{:#x}, {:#x}", x, kk),
+            Self::SNE(x, SEType::Reg(y)) => format!("SNE V{:#x}, V{:#x}", x, y),
+            Self::LD(_, LDType::Addr(nnn)) => format!("LD I, {:#x}", nnn),
+            Self::LD(x, LDType::B) => format!("LD B, V{:#x}", x),
+            Self::LD(x, LDType::Byte(kk)) => format!("LD V{:#x}, {:#x}", x, kk),
+            Self::LD(x, LDType::F) => format!("LD F, V{:#x}", x),
+            Self::LD(x, LDType::FromDT) => format!("LD V{:#x}, DT", x),
+            Self::LD(x, LDType::FromI) => format!("LD V{:#x}, [I]", x),
+            Self::LD(x, LDType::KeyPress) => format!("LD V{:#x}, K", x),
+            Self::LD(x, LDType::Reg(y)) => format!("LD V{:#x}, V{:#x}", x, y),
+            Self::LD(x, LDType::ToDT) => format!("LD DT, V{:#x}", x),
+            Self::LD(x, LDType::ToI) => format!("LD [I], V{:#x}", x),
+            Self::LD(x, LDType::ToST) => format!("LD ST, V{:#x}", x),
+            Self::ADD(x, AddType::Byte(kk)) => format!("ADD V{:#x}, {:#x}", x, kk),
+            Self::ADD(x, AddType::I) => format!("ADD V{:#x}, I", x),
+            Self::ADD(x, AddType::Reg(y)) => format!("ADD V{:#x}, V{:#x}", x, y),
+            Self::OR(x, y) => format!("OR V{:#x}, V{:#x}", x, y),
+            Self::AND(x, y) => format!("AND V{:#x}, V{:#x}", x, y),
+            Self::XOR(x, y) => format!("XOR V{:#x}, V{:#x}", x, y),
+            Self::SUB(x, y) => format!("SUB V{:#x}, V{:#x}", x, y),
+            Self::SHR(x, y) => format!("SHR V{:#x} {{, V{:#x}}}", x, y),
+            Self::SUBN(x, y) => format!("SUBN V{:#x}, V{:#x}", x, y),
+            Self::SHL(x, y) => format!("SHL V{:#x} {{, V{:#x}}}", x, y),
+            Self::RND(x, kk) => format!("RND V{:#x}, {:#x}", x, kk),
+            Self::DRW(x, y, n) => format!("DRW V{:#x}, V{:#x}, {:#x}", x, y, n),
+            Self::SKP(x) => format!("SKP V{:#x}", x),
+            Self::SKNP(x) => format!("SKNP V{:#x}", x),
+        }
+    }
+}
+
 impl Instruction {
     pub fn decode(instruction: u16) -> Option<Self> {
         let nibbles = (
@@ -112,47 +155,6 @@ impl Instruction {
             (0xF, _, 0x6, 0x5) => Instruction::LD(x, LDType::FromI),
             _ => return None,
         })
-    }
-
-    pub fn print_name(ins: &Self) {
-        match ins {
-            Self::RAW0 => println!("RAW0"),
-            Self::CLS => println!("CLS"),
-            Self::RET => println!("RET"),
-            Self::SYS(nnn) => println!("SYS {:#x}", nnn),
-            Self::JP(JPType::Addr(nnn)) => println!("JP {:#x}", nnn),
-            Self::JP(JPType::FromV0(nnn)) => println!("JP V0 + {:#x}", nnn),
-            Self::CALL(nnn) => println!("CALL {:#x}", nnn),
-            Self::SE(x, SEType::Byte(kk)) => println!("SE V{:#x}, {:#x}", x, kk),
-            Self::SE(x, SEType::Reg(y)) => println!("SE V{:#x}, V{:#x}", x, y),
-            Self::SNE(x, SEType::Byte(kk)) => println!("SNE V{:#x}, {:#x}", x, kk),
-            Self::SNE(x, SEType::Reg(y)) => println!("SNE V{:#x}, V{:#x}", x, y),
-            Self::LD(_, LDType::Addr(nnn)) => println!("LD I, {:#x}", nnn),
-            Self::LD(x, LDType::B) => println!("LD B, V{:#x}", x),
-            Self::LD(x, LDType::Byte(kk)) => println!("LD V{:#x}, {:#x}", x, kk),
-            Self::LD(x, LDType::F) => println!("LD F, V{:#x}", x),
-            Self::LD(x, LDType::FromDT) => println!("LD V{:#x}, DT", x),
-            Self::LD(x, LDType::FromI) => println!("LD V{:#x}, [I]", x),
-            Self::LD(x, LDType::KeyPress) => println!("LD V{:#x}, K", x),
-            Self::LD(x, LDType::Reg(y)) => println!("LD V{:#x}, V{:#x}", x, y),
-            Self::LD(x, LDType::ToDT) => println!("LD DT, V{:#x}", x),
-            Self::LD(x, LDType::ToI) => println!("LD [I], V{:#x}", x),
-            Self::LD(x, LDType::ToST) => println!("LD ST, V{:#x}", x),
-            Self::ADD(x, AddType::Byte(kk)) => println!("ADD V{:#x}, {:#x}", x, kk),
-            Self::ADD(x, AddType::I) => println!("ADD V{:#x}, I", x),
-            Self::ADD(x, AddType::Reg(y)) => println!("ADD V{:#x}, V{:#x}", x, y),
-            Self::OR(x, y) => println!("OR V{:#x}, V{:#x}", x, y),
-            Self::AND(x, y) => println!("AND V{:#x}, V{:#x}", x, y),
-            Self::XOR(x, y) => println!("XOR V{:#x}, V{:#x}", x, y),
-            Self::SUB(x, y) => println!("SUB V{:#x}, V{:#x}", x, y),
-            Self::SHR(x, y) => println!("SHR V{:#x} {{, V{:#x}}}", x, y),
-            Self::SUBN(x, y) => println!("SUBN V{:#x}, V{:#x}", x, y),
-            Self::SHL(x, y) => println!("SHL V{:#x} {{, V{:#x}}}", x, y),
-            Self::RND(x, kk) => println!("RND V{:#x}, {:#x}", x, kk),
-            Self::DRW(x, y, n) => println!("DRW V{:#x}, V{:#x}, {:#x}", x, y, n),
-            Self::SKP(x) => println!("SKP V{:#x}", x),
-            Self::SKNP(x) => println!("SKNP V{:#x}", x),
-        };
     }
 }
 
@@ -255,7 +257,7 @@ impl Cpu {
             let ins = Instruction::decode(bytes);
 
             if ins.is_some() {
-                Instruction::print_name(&(ins.unwrap()));
+                println!("{}", ins.unwrap().to_string());
             }
         }
 
@@ -308,46 +310,46 @@ impl Cpu {
 
     pub fn execute(&mut self, instruction: Instruction) -> Option<u8> {
         match instruction {
+            Instruction::ADD(x, AddType::Byte(kk)) => self.on_add_byte(x, kk),
+            Instruction::ADD(x, AddType::I) => self.on_add_i(x),
+            Instruction::ADD(x, AddType::Reg(y)) => self.on_add_reg(x, y),
+            Instruction::AND(x, y) => self.on_and(x, y),
+            Instruction::CALL(nnn) => self.on_call(nnn),
+            Instruction::CLS => self.on_cls(),
+            Instruction::DRW(x, y, n) => self.on_drw(x, y, n),
+            Instruction::JP(JPType::Addr(nnn)) => self.on_jp(nnn),
+            Instruction::JP(JPType::FromV0(nnn)) => self.on_jp_from0(nnn),
+            Instruction::LD(_, LDType::Addr(nnn)) => self.on_ld_addr(nnn),
+            Instruction::LD(x, LDType::B) => self.on_ld_b(x),
+            Instruction::LD(x, LDType::Byte(kk)) => self.on_ld_byte(x, kk),
+            Instruction::LD(x, LDType::F) => self.on_ld_f(x),
+            Instruction::LD(x, LDType::FromDT) => self.on_ld_from_dt(x),
+            Instruction::LD(x, LDType::FromI) => self.on_ld_from_i(x),
+            Instruction::LD(x, LDType::KeyPress) => self.on_ld_from_kp(x),
+            Instruction::LD(x, LDType::Reg(y)) => self.on_ld_reg(x, y),
+            Instruction::LD(x, LDType::ToDT) => self.on_ld_to_dt(x),
+            Instruction::LD(x, LDType::ToI) => self.on_ld_to_i(x),
+            Instruction::LD(x, LDType::ToST) => self.on_ld_to_st(x),
+            Instruction::OR(x, y) => self.on_or(x, y),
             Instruction::RAW0 => None,
-            Instruction::CLS => self.op_00e0(),
-            Instruction::RET => self.op_00ee(),
-            Instruction::SYS(nnn) => self.op_0nnn(nnn),
-            Instruction::JP(JPType::Addr(nnn)) => self.op_1nnn(nnn),
-            Instruction::CALL(nnn) => self.op_2nnn(nnn),
-            Instruction::SE(x, SEType::Byte(kk)) => self.op_3xkk(x, kk),
-            Instruction::SNE(x, SEType::Byte(kk)) => self.op_4xkk(x, kk),
-            Instruction::SE(x, SEType::Reg(y)) => self.op_5xy0(x, y),
-            Instruction::LD(x, LDType::Byte(kk)) => self.op_6xkk(x, kk),
-            Instruction::ADD(x, AddType::Byte(kk)) => self.op_7xkk(x, kk),
-            Instruction::LD(x, LDType::Reg(y)) => self.op_8xy0(x, y),
-            Instruction::OR(x, y) => self.op_8xy1(x, y),
-            Instruction::AND(x, y) => self.op_8xy2(x, y),
-            Instruction::XOR(x, y) => self.op_8xy3(x, y),
-            Instruction::ADD(x, AddType::Reg(y)) => self.op_8xy4(x, y),
-            Instruction::SUB(x, y) => self.op_8xy5(x, y),
-            Instruction::SHR(x, y) => self.op_8xy6(x, y),
-            Instruction::SUBN(x, y) => self.op_8xy7(x, y),
-            Instruction::SHL(x, y) => self.op_8xye(x, y),
-            Instruction::SNE(x, SEType::Reg(y)) => self.op_9xy0(x, y),
-            Instruction::LD(_, LDType::Addr(nnn)) => self.op_annn(nnn),
-            Instruction::JP(JPType::FromV0(nnn)) => self.op_bnnn(nnn),
-            Instruction::RND(x, kk) => self.op_cxkk(x, kk),
-            Instruction::DRW(x, y, n) => self.op_dxyn(x, y, n),
-            Instruction::SKP(x) => self.op_ex9e(x),
-            Instruction::SKNP(x) => self.op_exa1(x),
-            Instruction::LD(x, LDType::FromDT) => self.op_fx07(x),
-            Instruction::LD(x, LDType::KeyPress) => self.op_fx0a(x),
-            Instruction::LD(x, LDType::ToDT) => self.op_fx15(x),
-            Instruction::LD(x, LDType::ToST) => self.op_fx18(x),
-            Instruction::ADD(x, AddType::I) => self.op_fx1e(x),
-            Instruction::LD(x, LDType::F) => self.op_fx29(x),
-            Instruction::LD(x, LDType::B) => self.op_fx33(x),
-            Instruction::LD(x, LDType::ToI) => self.op_fx55(x),
-            Instruction::LD(x, LDType::FromI) => self.op_fx65(x),
+            Instruction::RET => self.on_ret(),
+            Instruction::RND(x, kk) => self.on_rnd(x, kk),
+            Instruction::SE(x, SEType::Byte(kk)) => self.on_se_byte(x, kk),
+            Instruction::SE(x, SEType::Reg(y)) => self.on_se_reg(x, y),
+            Instruction::SHL(x, y) => self.on_shl(x, y),
+            Instruction::SHR(x, y) => self.on_shr(x, y),
+            Instruction::SKNP(x) => self.on_sknp(x),
+            Instruction::SKP(x) => self.on_skp(x),
+            Instruction::SNE(x, SEType::Byte(kk)) => self.on_sne_byte(x, kk),
+            Instruction::SNE(x, SEType::Reg(y)) => self.on_sne_reg(x, y),
+            Instruction::SUB(x, y) => self.on_sub(x, y),
+            Instruction::SUBN(x, y) => self.on_subn(x, y),
+            Instruction::SYS(nnn) => self.on_sys(nnn),
+            Instruction::XOR(x, y) => self.on_xor(x, y),
         }
     }
 
-    fn op_00e0(&mut self) -> Option<u8> {
+    fn on_cls(&mut self) -> Option<u8> {
         // CLS
         for x in &mut self.screen {
             *x = false;
@@ -356,7 +358,7 @@ impl Cpu {
         None
     }
 
-    fn op_00ee(&mut self) -> Option<u8> {
+    fn on_ret(&mut self) -> Option<u8> {
         // RET
         self.pc = self.stack[self.sp as usize];
         self.sp -= 1;
@@ -364,21 +366,21 @@ impl Cpu {
         None
     }
 
-    fn op_0nnn(&mut self, nnn: u16) -> Option<u8> {
+    fn on_sys(&mut self, nnn: u16) -> Option<u8> {
         // SYS addr
         println!("Instruction {:#x} is for a system call.", nnn);
 
         None
     }
 
-    fn op_1nnn(&mut self, nnn: u16) -> Option<u8> {
+    fn on_jp(&mut self, nnn: u16) -> Option<u8> {
         // JP addr
         self.pc = nnn;
 
         None
     }
 
-    fn op_2nnn(&mut self, nnn: u16) -> Option<u8> {
+    fn on_call(&mut self, nnn: u16) -> Option<u8> {
         // CALL addr
         self.sp += 1;
         self.stack[self.sp as usize] = self.pc;
@@ -387,7 +389,7 @@ impl Cpu {
         None
     }
 
-    fn op_3xkk(&mut self, x: u8, kk: u8) -> Option<u8> {
+    fn on_se_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
         // SE x, kk
         if self.vx[x as usize] == kk {
             self.pc += 2;
@@ -396,7 +398,7 @@ impl Cpu {
         None
     }
 
-    fn op_4xkk(&mut self, x: u8, kk: u8) -> Option<u8> {
+    fn on_sne_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
         // SNE x, kk
         if self.vx[x as usize] != kk {
             self.pc += 2;
@@ -405,7 +407,7 @@ impl Cpu {
         None
     }
 
-    fn op_5xy0(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_se_reg(&mut self, x: u8, y: u8) -> Option<u8> {
         // SE x, y
         if self.vx[x as usize] == self.vx[y as usize] {
             self.pc += 2;
@@ -414,49 +416,49 @@ impl Cpu {
         None
     }
 
-    fn op_6xkk(&mut self, x: u8, kk: u8) -> Option<u8> {
+    fn on_ld_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
         // LD x, kk
         self.vx[x as usize] = kk;
 
         None
     }
 
-    fn op_7xkk(&mut self, x: u8, kk: u8) -> Option<u8> {
+    fn on_add_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
         // ADD x, kk
         self.vx[x as usize] = self.vx[x as usize].wrapping_add(kk);
 
         None
     }
 
-    fn op_8xy0(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_ld_reg(&mut self, x: u8, y: u8) -> Option<u8> {
         // LD x, y
         self.vx[x as usize] = self.vx[y as usize];
 
         None
     }
 
-    fn op_8xy1(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_or(&mut self, x: u8, y: u8) -> Option<u8> {
         // OR x, y
         self.vx[x as usize] |= self.vx[y as usize];
 
         None
     }
 
-    fn op_8xy2(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_and(&mut self, x: u8, y: u8) -> Option<u8> {
         // AND x, y
         self.vx[x as usize] &= self.vx[y as usize];
 
         None
     }
 
-    fn op_8xy3(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_xor(&mut self, x: u8, y: u8) -> Option<u8> {
         // XOR x, y
         self.vx[x as usize] ^= self.vx[y as usize];
 
         None
     }
 
-    fn op_8xy4(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_add_reg(&mut self, x: u8, y: u8) -> Option<u8> {
         // ADD x, y
         let sum: u16 = (self.vx[x as usize] as u16) + (self.vx[y as usize] as u16);
 
@@ -469,7 +471,7 @@ impl Cpu {
         None
     }
 
-    fn op_8xy5(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_sub(&mut self, x: u8, y: u8) -> Option<u8> {
         // SUB x, y
         self.vx[0xF] = if self.vx[x as usize] > self.vx[y as usize] {
             1
@@ -486,7 +488,7 @@ impl Cpu {
         None
     }
 
-    fn op_8xy6(&mut self, x: u8, _y: u8) -> Option<u8> {
+    fn on_shr(&mut self, x: u8, _y: u8) -> Option<u8> {
         // SHR x {, y}
         if self.vx[x as usize].trailing_ones() > 1 {
             self.vx[0xF] = 1
@@ -498,7 +500,7 @@ impl Cpu {
         None
     }
 
-    fn op_8xy7(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_subn(&mut self, x: u8, y: u8) -> Option<u8> {
         // SUBN x, y
         self.vx[0xF] = if self.vx[y as usize] > self.vx[x as usize] {
             1
@@ -515,7 +517,7 @@ impl Cpu {
         None
     }
 
-    fn op_8xye(&mut self, x: u8, _y: u8) -> Option<u8> {
+    fn on_shl(&mut self, x: u8, _y: u8) -> Option<u8> {
         // SHR x {, y}
         if self.vx[x as usize].leading_ones() > 1 {
             self.vx[0xF] = 1
@@ -527,7 +529,7 @@ impl Cpu {
         None
     }
 
-    fn op_9xy0(&mut self, x: u8, y: u8) -> Option<u8> {
+    fn on_sne_reg(&mut self, x: u8, y: u8) -> Option<u8> {
         // SNE x, y
         if self.vx[x as usize] != self.vx[y as usize] {
             self.pc += 2;
@@ -536,21 +538,21 @@ impl Cpu {
         None
     }
 
-    fn op_annn(&mut self, nnn: u16) -> Option<u8> {
+    fn on_ld_addr(&mut self, nnn: u16) -> Option<u8> {
         // LD I, addr
         self.ir = nnn;
 
         None
     }
 
-    fn op_bnnn(&mut self, nnn: u16) -> Option<u8> {
+    fn on_jp_from0(&mut self, nnn: u16) -> Option<u8> {
         // JP V0, addr
         self.pc = (self.vx[0] as u16) + nnn;
 
         None
     }
 
-    fn op_cxkk(&mut self, x: u8, kk: u8) -> Option<u8> {
+    fn on_rnd(&mut self, x: u8, kk: u8) -> Option<u8> {
         // RND x, kk
         let mut rng = rand::rng();
         self.vx[x as usize] = rng.random_range(0..=255) & kk;
@@ -558,7 +560,7 @@ impl Cpu {
         None
     }
 
-    fn op_dxyn(&mut self, x: u8, y: u8, n: u8) -> Option<u8> {
+    fn on_drw(&mut self, x: u8, y: u8, n: u8) -> Option<u8> {
         // DRW x, y, n
         self.vx[0xF] = 0;
         for i in 0..n {
@@ -583,7 +585,7 @@ impl Cpu {
         Some(1)
     }
 
-    fn op_ex9e(&mut self, x: u8) -> Option<u8> {
+    fn on_skp(&mut self, x: u8) -> Option<u8> {
         // SKP x
         let key = self.vx[x as usize] as usize;
         if self.kp[key] {
@@ -593,7 +595,7 @@ impl Cpu {
         None
     }
 
-    fn op_exa1(&mut self, x: u8) -> Option<u8> {
+    fn on_sknp(&mut self, x: u8) -> Option<u8> {
         // SKNP x
         let key = self.vx[x as usize] as usize;
         if !self.kp[key] {
@@ -603,14 +605,14 @@ impl Cpu {
         None
     }
 
-    fn op_fx07(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_from_dt(&mut self, x: u8) -> Option<u8> {
         // LD x, DT
         self.vx[x as usize] = self.dt;
 
         None
     }
 
-    fn op_fx0a(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_from_kp(&mut self, x: u8) -> Option<u8> {
         // LD x, KP
         let key_pos = self.kp.iter().position(|&x| x == true);
         if key_pos.is_some() {
@@ -625,35 +627,35 @@ impl Cpu {
         }
     }
 
-    fn op_fx15(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_to_dt(&mut self, x: u8) -> Option<u8> {
         // LD DT, x
         self.dt = self.vx[x as usize];
 
         None
     }
 
-    fn op_fx18(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_to_st(&mut self, x: u8) -> Option<u8> {
         // LD ST, x
         self.st = self.vx[x as usize];
 
         None
     }
 
-    fn op_fx1e(&mut self, x: u8) -> Option<u8> {
+    fn on_add_i(&mut self, x: u8) -> Option<u8> {
         // ADD I, x
         self.ir += self.vx[x as usize] as u16;
 
         None
     }
 
-    fn op_fx29(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_f(&mut self, x: u8) -> Option<u8> {
         // LD F, x
         self.ir = (self.vx[x as usize] as u16) * 5;
 
         None
     }
 
-    fn op_fx33(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_b(&mut self, x: u8) -> Option<u8> {
         // LD B, x
         let start_addr = self.ir as usize;
         self.ram[start_addr] = self.vx[x as usize] / 100;
@@ -663,7 +665,7 @@ impl Cpu {
         None
     }
 
-    fn op_fx55(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_to_i(&mut self, x: u8) -> Option<u8> {
         // LD [I], x
         let start_addr = self.ir as usize;
         self.ram[start_addr..=(start_addr + (x as usize))]
@@ -672,7 +674,7 @@ impl Cpu {
         None
     }
 
-    fn op_fx65(&mut self, x: u8) -> Option<u8> {
+    fn on_ld_from_i(&mut self, x: u8) -> Option<u8> {
         // LD x, [I]
         let start_addr = self.ir as usize;
         self.vx[0..=(x as usize)]
