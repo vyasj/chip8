@@ -1,8 +1,12 @@
+use std::fmt;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
 use rand::Rng;
+
+pub const SCREEN_WIDTH: u8 = 64;
+pub const SCREEN_HEIGHT: u8 = 32;
 
 pub enum JPType {
     Addr(u16),
@@ -58,45 +62,45 @@ pub enum Instruction {
     RAW0,
 }
 
-impl ToString for Instruction {
-    fn to_string(&self) -> String {
+impl fmt::Display for Instruction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::RAW0 => "RAW0".to_string(),
-            Self::CLS => "CLS".to_string(),
-            Self::RET => "RET".to_string(),
-            Self::SYS(nnn) => format!("SYS {:#x}", nnn),
-            Self::JP(JPType::Addr(nnn)) => format!("JP {:#x}", nnn),
-            Self::JP(JPType::FromV0(nnn)) => format!("JP V0 + {:#x}", nnn),
-            Self::CALL(nnn) => format!("CALL {:#x}", nnn),
-            Self::SE(x, SEType::Byte(kk)) => format!("SE V{:#x}, {:#x}", x, kk),
-            Self::SE(x, SEType::Reg(y)) => format!("SE V{:#x}, V{:#x}", x, y),
-            Self::SNE(x, SEType::Byte(kk)) => format!("SNE V{:#x}, {:#x}", x, kk),
-            Self::SNE(x, SEType::Reg(y)) => format!("SNE V{:#x}, V{:#x}", x, y),
-            Self::LD(_, LDType::Addr(nnn)) => format!("LD I, {:#x}", nnn),
-            Self::LD(x, LDType::B) => format!("LD B, V{:#x}", x),
-            Self::LD(x, LDType::Byte(kk)) => format!("LD V{:#x}, {:#x}", x, kk),
-            Self::LD(x, LDType::F) => format!("LD F, V{:#x}", x),
-            Self::LD(x, LDType::FromDT) => format!("LD V{:#x}, DT", x),
-            Self::LD(x, LDType::FromI) => format!("LD V{:#x}, [I]", x),
-            Self::LD(x, LDType::KeyPress) => format!("LD V{:#x}, K", x),
-            Self::LD(x, LDType::Reg(y)) => format!("LD V{:#x}, V{:#x}", x, y),
-            Self::LD(x, LDType::ToDT) => format!("LD DT, V{:#x}", x),
-            Self::LD(x, LDType::ToI) => format!("LD [I], V{:#x}", x),
-            Self::LD(x, LDType::ToST) => format!("LD ST, V{:#x}", x),
-            Self::ADD(x, AddType::Byte(kk)) => format!("ADD V{:#x}, {:#x}", x, kk),
-            Self::ADD(x, AddType::I) => format!("ADD V{:#x}, I", x),
-            Self::ADD(x, AddType::Reg(y)) => format!("ADD V{:#x}, V{:#x}", x, y),
-            Self::OR(x, y) => format!("OR V{:#x}, V{:#x}", x, y),
-            Self::AND(x, y) => format!("AND V{:#x}, V{:#x}", x, y),
-            Self::XOR(x, y) => format!("XOR V{:#x}, V{:#x}", x, y),
-            Self::SUB(x, y) => format!("SUB V{:#x}, V{:#x}", x, y),
-            Self::SHR(x, y) => format!("SHR V{:#x} {{, V{:#x}}}", x, y),
-            Self::SUBN(x, y) => format!("SUBN V{:#x}, V{:#x}", x, y),
-            Self::SHL(x, y) => format!("SHL V{:#x} {{, V{:#x}}}", x, y),
-            Self::RND(x, kk) => format!("RND V{:#x}, {:#x}", x, kk),
-            Self::DRW(x, y, n) => format!("DRW V{:#x}, V{:#x}, {:#x}", x, y, n),
-            Self::SKP(x) => format!("SKP V{:#x}", x),
-            Self::SKNP(x) => format!("SKNP V{:#x}", x),
+            Self::RAW0 => write!(f, "RAW0"),
+            Self::CLS => write!(f, "CLS"),
+            Self::RET => write!(f, "RET"),
+            Self::SYS(nnn) => write!(f, "SYS {:#x}", nnn),
+            Self::JP(JPType::Addr(nnn)) => write!(f, "JP {:#x}", nnn),
+            Self::JP(JPType::FromV0(nnn)) => write!(f, "JP V0 + {:#x}", nnn),
+            Self::CALL(nnn) => write!(f, "CALL {:#x}", nnn),
+            Self::SE(x, SEType::Byte(kk)) => write!(f, "SE V{:#x}, {:#x}", x, kk),
+            Self::SE(x, SEType::Reg(y)) => write!(f, "SE V{:#x}, V{:#x}", x, y),
+            Self::SNE(x, SEType::Byte(kk)) => write!(f, "SNE V{:#x}, {:#x}", x, kk),
+            Self::SNE(x, SEType::Reg(y)) => write!(f, "SNE V{:#x}, V{:#x}", x, y),
+            Self::LD(_, LDType::Addr(nnn)) => write!(f, "LD I, {:#x}", nnn),
+            Self::LD(x, LDType::B) => write!(f, "LD B, V{:#x}", x),
+            Self::LD(x, LDType::Byte(kk)) => write!(f, "LD V{:#x}, {:#x}", x, kk),
+            Self::LD(x, LDType::F) => write!(f, "LD F, V{:#x}", x),
+            Self::LD(x, LDType::FromDT) => write!(f, "LD V{:#x}, DT", x),
+            Self::LD(x, LDType::FromI) => write!(f, "LD V{:#x}, [I]", x),
+            Self::LD(x, LDType::KeyPress) => write!(f, "LD V{:#x}, K", x),
+            Self::LD(x, LDType::Reg(y)) => write!(f, "LD V{:#x}, V{:#x}", x, y),
+            Self::LD(x, LDType::ToDT) => write!(f, "LD DT, V{:#x}", x),
+            Self::LD(x, LDType::ToI) => write!(f, "LD [I], V{:#x}", x),
+            Self::LD(x, LDType::ToST) => write!(f, "LD ST, V{:#x}", x),
+            Self::ADD(x, AddType::Byte(kk)) => write!(f, "ADD V{:#x}, {:#x}", x, kk),
+            Self::ADD(x, AddType::I) => write!(f, "ADD V{:#x}, I", x),
+            Self::ADD(x, AddType::Reg(y)) => write!(f, "ADD V{:#x}, V{:#x}", x, y),
+            Self::OR(x, y) => write!(f, "OR V{:#x}, V{:#x}", x, y),
+            Self::AND(x, y) => write!(f, "AND V{:#x}, V{:#x}", x, y),
+            Self::XOR(x, y) => write!(f, "XOR V{:#x}, V{:#x}", x, y),
+            Self::SUB(x, y) => write!(f, "SUB V{:#x}, V{:#x}", x, y),
+            Self::SHR(x, y) => write!(f, "SHR V{:#x} {{, V{:#x}}}", x, y),
+            Self::SUBN(x, y) => write!(f, "SUBN V{:#x}, V{:#x}", x, y),
+            Self::SHL(x, y) => write!(f, "SHL V{:#x} {{, V{:#x}}}", x, y),
+            Self::RND(x, kk) => write!(f, "RND V{:#x}, {:#x}", x, kk),
+            Self::DRW(x, y, n) => write!(f, "DRW V{:#x}, V{:#x}, {:#x}", x, y, n),
+            Self::SKP(x) => write!(f, "SKP V{:#x}", x),
+            Self::SKNP(x) => write!(f, "SKNP V{:#x}", x),
         }
     }
 }
@@ -159,47 +163,36 @@ impl Instruction {
 }
 
 pub struct Cpu {
-    pub ram: Vec<u8>,
-    pub stack: Vec<u16>,
-
-    pub pc: u16,       // program counter
-    pub ir: u16,       // index register
-    pub vx: Vec<u8>,   // V-registers
-    pub st: u8,        // sound timer
-    pub dt: u8,        // delay timer
-    pub sp: u8,        // stack pointer
-    pub kp: Vec<bool>, // key pressed
-
-    pub height: u8,
-    pub width: u8,
-    pub screen: Vec<bool>,
+    /// Memory / 4KB addressable RAM
+    pub ram: [u8; 4096],
+    /// Memory / 16-level call stack
+    pub stack: [u16; 16],
+    /// Register / V0–VF general-purpose 8-bit registers
+    pub vx: [u8; 16],
+    /// Register / Program counter
+    pub pc: u16,
+    /// Register / Index register
+    pub ir: u16,
+    /// Register / Stack pointer
+    pub sp: u8,
+    /// Timer / Delay timer
+    pub dt: u8,
+    /// Timer / Sound timer
+    pub st: u8,
+    /// Input / 16-key keypad state
+    pub kp: [bool; 16],
+    /// Monochrome pixel buffer
+    pub screen: [bool; SCREEN_HEIGHT as usize * SCREEN_WIDTH as usize],
+    /// Flag / Set when display needs redraw
+    pub should_draw: bool,
+    /// Flag / Set if waiting for key input
+    pub waiting_for_key: bool,
 }
 
 impl Cpu {
-    pub fn init() -> Cpu {
-        let mut ret = Cpu {
-            ram: vec![0x00; 4096],
-            stack: vec![0x0000; 16],
-
-            pc: 0x200,
-            ir: 0,
-            vx: vec![0; 16],
-            st: 60,
-            dt: 60,
-            sp: 0,
-            kp: vec![false; 16],
-
-            height: 32,
-            width: 64,
-            screen: vec![false; 64 * 32],
-        };
-
-        ret.load_font();
-
-        ret
-    }
-
-    fn load_font(&mut self) {
+    pub fn new() -> Self {
+        // Memory
+        let mut ram = [0x00; 4096];
         let font = [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -218,8 +211,45 @@ impl Cpu {
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
             0xF0, 0x80, 0xF0, 0x80, 0x80, // F
         ];
+        ram[0x050..0x0A0].copy_from_slice(&font);
 
-        self.ram[0x050..0x0A0].copy_from_slice(&font);
+        // Stack
+        let stack = [0x0000; 16];
+
+        // Registers
+        let vx = [0x00; 16];
+        let pc = 0x200;
+        let ir = 0x00;
+        let sp = 0x00;
+
+        // Timers
+        let dt = 0x3c;
+        let st = 0x3c;
+
+        // Input
+        let kp = [false; 16];
+
+        // Display
+        let screen = [false; SCREEN_WIDTH as usize * SCREEN_HEIGHT as usize];
+
+        // Flags
+        let should_draw = false;
+        let waiting_for_key = false;
+
+        Cpu {
+            ram,
+            stack,
+            pc,
+            ir,
+            vx,
+            st,
+            dt,
+            sp,
+            kp,
+            screen,
+            should_draw,
+            waiting_for_key,
+        }
     }
 
     pub fn load_rom(&mut self, filename: &str) {
@@ -257,7 +287,7 @@ impl Cpu {
             let ins = Instruction::decode(bytes);
 
             if ins.is_some() {
-                println!("{}", ins.unwrap().to_string());
+                println!("{}", ins.unwrap());
             }
         }
 
@@ -282,8 +312,6 @@ impl Cpu {
         for i in 0..self.kp.len() {
             println!("V{} | {} | ", i, self.kp[i]);
         }
-
-        println!("");
     }
 
     pub fn draw(&self, frame: &mut [u8]) {
@@ -308,270 +336,95 @@ impl Cpu {
         (n1 << 8) | n2
     }
 
-    pub fn execute(&mut self, instruction: Instruction) -> Option<u8> {
+    pub fn exec(&mut self, instruction: Instruction) {
         match instruction {
-            Instruction::ADD(x, AddType::Byte(kk)) => self.on_add_byte(x, kk),
-            Instruction::ADD(x, AddType::I) => self.on_add_i(x),
-            Instruction::ADD(x, AddType::Reg(y)) => self.on_add_reg(x, y),
-            Instruction::AND(x, y) => self.on_and(x, y),
-            Instruction::CALL(nnn) => self.on_call(nnn),
-            Instruction::CLS => self.on_cls(),
-            Instruction::DRW(x, y, n) => self.on_drw(x, y, n),
-            Instruction::JP(JPType::Addr(nnn)) => self.on_jp(nnn),
-            Instruction::JP(JPType::FromV0(nnn)) => self.on_jp_from0(nnn),
-            Instruction::LD(_, LDType::Addr(nnn)) => self.on_ld_addr(nnn),
-            Instruction::LD(x, LDType::B) => self.on_ld_b(x),
-            Instruction::LD(x, LDType::Byte(kk)) => self.on_ld_byte(x, kk),
-            Instruction::LD(x, LDType::F) => self.on_ld_f(x),
-            Instruction::LD(x, LDType::FromDT) => self.on_ld_from_dt(x),
-            Instruction::LD(x, LDType::FromI) => self.on_ld_from_i(x),
-            Instruction::LD(x, LDType::KeyPress) => self.on_ld_from_kp(x),
-            Instruction::LD(x, LDType::Reg(y)) => self.on_ld_reg(x, y),
-            Instruction::LD(x, LDType::ToDT) => self.on_ld_to_dt(x),
-            Instruction::LD(x, LDType::ToI) => self.on_ld_to_i(x),
-            Instruction::LD(x, LDType::ToST) => self.on_ld_to_st(x),
-            Instruction::OR(x, y) => self.on_or(x, y),
-            Instruction::RAW0 => None,
-            Instruction::RET => self.on_ret(),
-            Instruction::RND(x, kk) => self.on_rnd(x, kk),
-            Instruction::SE(x, SEType::Byte(kk)) => self.on_se_byte(x, kk),
-            Instruction::SE(x, SEType::Reg(y)) => self.on_se_reg(x, y),
-            Instruction::SHL(x, y) => self.on_shl(x, y),
-            Instruction::SHR(x, y) => self.on_shr(x, y),
-            Instruction::SKNP(x) => self.on_sknp(x),
-            Instruction::SKP(x) => self.on_skp(x),
-            Instruction::SNE(x, SEType::Byte(kk)) => self.on_sne_byte(x, kk),
-            Instruction::SNE(x, SEType::Reg(y)) => self.on_sne_reg(x, y),
-            Instruction::SUB(x, y) => self.on_sub(x, y),
-            Instruction::SUBN(x, y) => self.on_subn(x, y),
-            Instruction::SYS(nnn) => self.on_sys(nnn),
-            Instruction::XOR(x, y) => self.on_xor(x, y),
+            Instruction::ADD(x, AddType::Byte(kk)) => self.exec_add_byte(x, kk),
+            Instruction::ADD(x, AddType::I) => self.exec_add_i(x),
+            Instruction::ADD(x, AddType::Reg(y)) => self.exec_add_reg(x, y),
+            Instruction::AND(x, y) => self.exec_and(x, y),
+            Instruction::CALL(nnn) => self.exec_call(nnn),
+            Instruction::CLS => self.exec_cls(),
+            Instruction::DRW(x, y, n) => self.exec_drw(x, y, n),
+            Instruction::JP(JPType::Addr(nnn)) => self.exec_jp(nnn),
+            Instruction::JP(JPType::FromV0(nnn)) => self.exec_jp_from0(nnn),
+            Instruction::LD(_, LDType::Addr(nnn)) => self.exec_ld_addr(nnn),
+            Instruction::LD(x, LDType::B) => self.exec_ld_b(x),
+            Instruction::LD(x, LDType::Byte(kk)) => self.exec_ld_byte(x, kk),
+            Instruction::LD(x, LDType::F) => self.exec_ld_f(x),
+            Instruction::LD(x, LDType::FromDT) => self.exec_ld_from_dt(x),
+            Instruction::LD(x, LDType::FromI) => self.exec_ld_from_i(x),
+            Instruction::LD(x, LDType::KeyPress) => self.exec_ld_from_kp(x),
+            Instruction::LD(x, LDType::Reg(y)) => self.exec_ld_reg(x, y),
+            Instruction::LD(x, LDType::ToDT) => self.exec_ld_to_dt(x),
+            Instruction::LD(x, LDType::ToI) => self.exec_ld_to_i(x),
+            Instruction::LD(x, LDType::ToST) => self.exec_ld_to_st(x),
+            Instruction::OR(x, y) => self.exec_or(x, y),
+            Instruction::RAW0 => (),
+            Instruction::RET => self.exec_ret(),
+            Instruction::RND(x, kk) => self.exec_rnd(x, kk),
+            Instruction::SE(x, SEType::Byte(kk)) => self.exec_se_byte(x, kk),
+            Instruction::SE(x, SEType::Reg(y)) => self.exec_se_reg(x, y),
+            Instruction::SHL(x, y) => self.exec_shl(x, y),
+            Instruction::SHR(x, y) => self.exec_shr(x, y),
+            Instruction::SKNP(x) => self.exec_sknp(x),
+            Instruction::SKP(x) => self.exec_skp(x),
+            Instruction::SNE(x, SEType::Byte(kk)) => self.exec_sne_byte(x, kk),
+            Instruction::SNE(x, SEType::Reg(y)) => self.exec_sne_reg(x, y),
+            Instruction::SUB(x, y) => self.exec_sub(x, y),
+            Instruction::SUBN(x, y) => self.exec_subn(x, y),
+            Instruction::SYS(nnn) => self.exec_sys(nnn),
+            Instruction::XOR(x, y) => self.exec_xor(x, y),
         }
     }
 
-    fn on_cls(&mut self) -> Option<u8> {
-        // CLS
-        for x in &mut self.screen {
-            *x = false;
-        }
-
-        None
-    }
-
-    fn on_ret(&mut self) -> Option<u8> {
-        // RET
-        self.pc = self.stack[self.sp as usize];
-        self.sp -= 1;
-
-        None
-    }
-
-    fn on_sys(&mut self, nnn: u16) -> Option<u8> {
-        // SYS addr
-        println!("Instruction {:#x} is for a system call.", nnn);
-
-        None
-    }
-
-    fn on_jp(&mut self, nnn: u16) -> Option<u8> {
-        // JP addr
-        self.pc = nnn;
-
-        None
-    }
-
-    fn on_call(&mut self, nnn: u16) -> Option<u8> {
-        // CALL addr
-        self.sp += 1;
-        self.stack[self.sp as usize] = self.pc;
-        self.pc = nnn;
-
-        None
-    }
-
-    fn on_se_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
-        // SE x, kk
-        if self.vx[x as usize] == kk {
-            self.pc += 2;
-        }
-
-        None
-    }
-
-    fn on_sne_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
-        // SNE x, kk
-        if self.vx[x as usize] != kk {
-            self.pc += 2;
-        }
-
-        None
-    }
-
-    fn on_se_reg(&mut self, x: u8, y: u8) -> Option<u8> {
-        // SE x, y
-        if self.vx[x as usize] == self.vx[y as usize] {
-            self.pc += 2;
-        }
-
-        None
-    }
-
-    fn on_ld_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
-        // LD x, kk
-        self.vx[x as usize] = kk;
-
-        None
-    }
-
-    fn on_add_byte(&mut self, x: u8, kk: u8) -> Option<u8> {
-        // ADD x, kk
+    #[inline]
+    fn exec_add_byte(&mut self, x: u8, kk: u8) {
         self.vx[x as usize] = self.vx[x as usize].wrapping_add(kk);
-
-        None
     }
 
-    fn on_ld_reg(&mut self, x: u8, y: u8) -> Option<u8> {
-        // LD x, y
-        self.vx[x as usize] = self.vx[y as usize];
-
-        None
+    #[inline]
+    fn exec_add_i(&mut self, x: u8) {
+        self.ir += self.vx[x as usize] as u16;
     }
 
-    fn on_or(&mut self, x: u8, y: u8) -> Option<u8> {
-        // OR x, y
-        self.vx[x as usize] |= self.vx[y as usize];
-
-        None
-    }
-
-    fn on_and(&mut self, x: u8, y: u8) -> Option<u8> {
-        // AND x, y
-        self.vx[x as usize] &= self.vx[y as usize];
-
-        None
-    }
-
-    fn on_xor(&mut self, x: u8, y: u8) -> Option<u8> {
-        // XOR x, y
-        self.vx[x as usize] ^= self.vx[y as usize];
-
-        None
-    }
-
-    fn on_add_reg(&mut self, x: u8, y: u8) -> Option<u8> {
-        // ADD x, y
+    #[inline]
+    fn exec_add_reg(&mut self, x: u8, y: u8) {
         let sum: u16 = (self.vx[x as usize] as u16) + (self.vx[y as usize] as u16);
-
         if sum & 0xFF00 > 0 {
             self.vx[0xF] = 1;
         }
-
         self.vx[x as usize] = sum as u8;
-
-        None
     }
 
-    fn on_sub(&mut self, x: u8, y: u8) -> Option<u8> {
-        // SUB x, y
-        self.vx[0xF] = if self.vx[x as usize] > self.vx[y as usize] {
-            1
-        } else {
-            0
-        };
-
-        self.vx[x as usize] = if self.vx[0xF] == 1 {
-            self.vx[x as usize] - self.vx[y as usize]
-        } else {
-            self.vx[y as usize] - self.vx[x as usize]
-        };
-
-        None
+    #[inline]
+    fn exec_and(&mut self, x: u8, y: u8) {
+        self.vx[x as usize] &= self.vx[y as usize];
     }
 
-    fn on_shr(&mut self, x: u8, _y: u8) -> Option<u8> {
-        // SHR x {, y}
-        if self.vx[x as usize].trailing_ones() > 1 {
-            self.vx[0xF] = 1
-        } else {
-            self.vx[0xF] = 0
-        };
-        self.vx[x as usize] = self.vx[x as usize] >> 1;
-
-        None
+    #[inline]
+    fn exec_call(&mut self, nnn: u16) {
+        self.sp += 1;
+        self.stack[self.sp as usize] = self.pc;
+        self.pc = nnn;
     }
 
-    fn on_subn(&mut self, x: u8, y: u8) -> Option<u8> {
-        // SUBN x, y
-        self.vx[0xF] = if self.vx[y as usize] > self.vx[x as usize] {
-            1
-        } else {
-            0
-        };
-
-        self.vx[x as usize] = if self.vx[0xF] == 0 {
-            self.vx[x as usize] - self.vx[y as usize]
-        } else {
-            self.vx[y as usize] - self.vx[x as usize]
-        };
-
-        None
-    }
-
-    fn on_shl(&mut self, x: u8, _y: u8) -> Option<u8> {
-        // SHR x {, y}
-        if self.vx[x as usize].leading_ones() > 1 {
-            self.vx[0xF] = 1
-        } else {
-            self.vx[0xF] = 0
-        };
-        self.vx[x as usize] = self.vx[x as usize] << 1;
-
-        None
-    }
-
-    fn on_sne_reg(&mut self, x: u8, y: u8) -> Option<u8> {
-        // SNE x, y
-        if self.vx[x as usize] != self.vx[y as usize] {
-            self.pc += 2;
+    #[inline]
+    fn exec_cls(&mut self) {
+        for x in &mut self.screen {
+            *x = false;
         }
-
-        None
     }
 
-    fn on_ld_addr(&mut self, nnn: u16) -> Option<u8> {
-        // LD I, addr
-        self.ir = nnn;
-
-        None
-    }
-
-    fn on_jp_from0(&mut self, nnn: u16) -> Option<u8> {
-        // JP V0, addr
-        self.pc = (self.vx[0] as u16) + nnn;
-
-        None
-    }
-
-    fn on_rnd(&mut self, x: u8, kk: u8) -> Option<u8> {
-        // RND x, kk
-        let mut rng = rand::rng();
-        self.vx[x as usize] = rng.random_range(0..=255) & kk;
-
-        None
-    }
-
-    fn on_drw(&mut self, x: u8, y: u8, n: u8) -> Option<u8> {
-        // DRW x, y, n
+    #[inline]
+    fn exec_drw(&mut self, x: u8, y: u8, n: u8) {
         self.vx[0xF] = 0;
         for i in 0..n {
             let sprite_byte: u8 = self.ram[(self.ir + i as u16) as usize];
-
             for j in 0..8 {
                 if (sprite_byte << j) & 0x80 != 0 {
-                    let counter_x = ((self.vx[x as usize] + j) % (self.width)) as usize;
-                    let counter_y = ((self.vx[y as usize] + i) % (self.height)) as usize;
-                    let screen_idx = (counter_y * self.width as usize) + counter_x;
-
+                    let counter_x = ((self.vx[x as usize] + j) % (SCREEN_WIDTH)) as usize;
+                    let counter_y = ((self.vx[y as usize] + i) % (SCREEN_HEIGHT)) as usize;
+                    let screen_idx = (counter_y * SCREEN_WIDTH as usize) + counter_x;
                     if self.screen[screen_idx] {
                         self.vx[0xF] = 1;
                     }
@@ -579,111 +432,212 @@ impl Cpu {
                 }
             }
         }
-
-        // returning 1 is understood as a call to draw, so the main() loop
-        // knows to request the game window for a redraw
-        Some(1)
+        self.should_draw = true;
     }
 
-    fn on_skp(&mut self, x: u8) -> Option<u8> {
-        // SKP x
-        let key = self.vx[x as usize] as usize;
-        if self.kp[key] {
-            self.pc += 2;
-        }
-
-        None
+    #[inline]
+    fn exec_jp(&mut self, nnn: u16) {
+        self.pc = nnn;
     }
 
-    fn on_sknp(&mut self, x: u8) -> Option<u8> {
-        // SKNP x
-        let key = self.vx[x as usize] as usize;
-        if !self.kp[key] {
-            self.pc += 2;
-        }
-
-        None
+    #[inline]
+    fn exec_jp_from0(&mut self, nnn: u16) {
+        self.pc = (self.vx[0] as u16) + nnn;
     }
 
-    fn on_ld_from_dt(&mut self, x: u8) -> Option<u8> {
-        // LD x, DT
-        self.vx[x as usize] = self.dt;
-
-        None
+    #[inline]
+    fn exec_ld_addr(&mut self, nnn: u16) {
+        self.ir = nnn;
     }
 
-    fn on_ld_from_kp(&mut self, x: u8) -> Option<u8> {
-        // LD x, KP
-        let key_pos = self.kp.iter().position(|&x| x == true);
-        if key_pos.is_some() {
-            self.vx[x as usize] = key_pos.unwrap() as u8;
-
-            None
-        } else {
-            // returning 2 is understood as a call to wait, so the main() loop
-            // knows to halt the control flow and wait for another key press
-
-            Some(2)
-        }
-    }
-
-    fn on_ld_to_dt(&mut self, x: u8) -> Option<u8> {
-        // LD DT, x
-        self.dt = self.vx[x as usize];
-
-        None
-    }
-
-    fn on_ld_to_st(&mut self, x: u8) -> Option<u8> {
-        // LD ST, x
-        self.st = self.vx[x as usize];
-
-        None
-    }
-
-    fn on_add_i(&mut self, x: u8) -> Option<u8> {
-        // ADD I, x
-        self.ir += self.vx[x as usize] as u16;
-
-        None
-    }
-
-    fn on_ld_f(&mut self, x: u8) -> Option<u8> {
-        // LD F, x
-        self.ir = (self.vx[x as usize] as u16) * 5;
-
-        None
-    }
-
-    fn on_ld_b(&mut self, x: u8) -> Option<u8> {
-        // LD B, x
+    #[inline]
+    fn exec_ld_b(&mut self, x: u8) {
         let start_addr = self.ir as usize;
         self.ram[start_addr] = self.vx[x as usize] / 100;
         self.ram[start_addr + 1] = (self.vx[x as usize] % 100) / 10;
         self.ram[start_addr + 2] = self.vx[x as usize] % 10;
-
-        None
     }
 
-    fn on_ld_to_i(&mut self, x: u8) -> Option<u8> {
-        // LD [I], x
-        let start_addr = self.ir as usize;
-        self.ram[start_addr..=(start_addr + (x as usize))]
-            .copy_from_slice(&self.vx[0..=(x as usize)]);
-
-        None
+    #[inline]
+    fn exec_ld_byte(&mut self, x: u8, kk: u8) {
+        self.vx[x as usize] = kk;
     }
 
-    fn on_ld_from_i(&mut self, x: u8) -> Option<u8> {
-        // LD x, [I]
+    #[inline]
+    fn exec_ld_f(&mut self, x: u8) {
+        self.ir = (self.vx[x as usize] as u16) * 5;
+    }
+
+    #[inline]
+    fn exec_ld_from_dt(&mut self, x: u8) {
+        self.vx[x as usize] = self.dt;
+    }
+
+    #[inline]
+    fn exec_ld_from_i(&mut self, x: u8) {
         let start_addr = self.ir as usize;
         self.vx[0..=(x as usize)]
             .copy_from_slice(&self.ram[start_addr..=(start_addr + (x as usize))]);
+    }
 
-        None
+    #[inline]
+    fn exec_ld_from_kp(&mut self, x: u8) {
+        let key_pos = self.kp.iter().position(|&x| x);
+        if let Some(pos) = key_pos {
+            self.vx[x as usize] = pos as u8;
+            self.waiting_for_key = false;
+        } else {
+            self.waiting_for_key = true;
+        }
+    }
+
+    #[inline]
+    fn exec_ld_reg(&mut self, x: u8, y: u8) {
+        self.vx[x as usize] = self.vx[y as usize];
+    }
+
+    #[inline]
+    fn exec_ld_to_dt(&mut self, x: u8) {
+        self.dt = self.vx[x as usize];
+    }
+
+    #[inline]
+    fn exec_ld_to_i(&mut self, x: u8) {
+        let start_addr = self.ir as usize;
+        self.ram[start_addr..=(start_addr + (x as usize))]
+            .copy_from_slice(&self.vx[0..=(x as usize)]);
+    }
+
+    #[inline]
+    fn exec_ld_to_st(&mut self, x: u8) {
+        self.st = self.vx[x as usize];
+    }
+
+    #[inline]
+    fn exec_or(&mut self, x: u8, y: u8) {
+        self.vx[x as usize] |= self.vx[y as usize];
+    }
+
+    #[inline]
+    fn exec_ret(&mut self) {
+        self.pc = self.stack[self.sp as usize];
+        self.sp -= 1;
+    }
+
+    #[inline]
+    fn exec_rnd(&mut self, x: u8, kk: u8) {
+        let mut rng = rand::rng();
+        self.vx[x as usize] = rng.random_range(0..=255) & kk;
+    }
+
+    #[inline]
+    fn exec_se_byte(&mut self, x: u8, kk: u8) {
+        if self.vx[x as usize] == kk {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_se_reg(&mut self, x: u8, y: u8) {
+        if self.vx[x as usize] == self.vx[y as usize] {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_shl(&mut self, x: u8, _y: u8) {
+        self.vx[0xF] = if self.vx[x as usize].leading_ones() > 1 {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] <<= 1;
+    }
+
+    #[inline]
+    fn exec_shr(&mut self, x: u8, _y: u8) {
+        self.vx[0xF] = if self.vx[x as usize].trailing_ones() > 1 {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] >>= 1;
+    }
+
+    #[inline]
+    fn exec_skp(&mut self, x: u8) {
+        let key = self.vx[x as usize] as usize;
+        if self.kp[key] {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_sknp(&mut self, x: u8) {
+        let key = self.vx[x as usize] as usize;
+        if !self.kp[key] {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_sne_byte(&mut self, x: u8, kk: u8) {
+        if self.vx[x as usize] != kk {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_sne_reg(&mut self, x: u8, y: u8) {
+        if self.vx[x as usize] != self.vx[y as usize] {
+            self.pc += 2;
+        }
+    }
+
+    #[inline]
+    fn exec_sub(&mut self, x: u8, y: u8) {
+        self.vx[0xF] = if self.vx[x as usize] > self.vx[y as usize] {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] = if self.vx[0xF] == 1 {
+            self.vx[x as usize] - self.vx[y as usize]
+        } else {
+            self.vx[y as usize] - self.vx[x as usize]
+        };
+    }
+
+    #[inline]
+    fn exec_subn(&mut self, x: u8, y: u8) {
+        self.vx[0xF] = if self.vx[y as usize] > self.vx[x as usize] {
+            1
+        } else {
+            0
+        };
+        self.vx[x as usize] = if self.vx[0xF] == 0 {
+            self.vx[x as usize] - self.vx[y as usize]
+        } else {
+            self.vx[y as usize] - self.vx[x as usize]
+        };
+    }
+
+    #[inline]
+    fn exec_sys(&mut self, nnn: u16) {
+        println!("Instruction {:#x} is for a system call.", nnn);
+    }
+
+    #[inline]
+    fn exec_xor(&mut self, x: u8, y: u8) {
+        self.vx[x as usize] ^= self.vx[y as usize];
     }
 }
 
+impl Default for Cpu {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -691,7 +645,7 @@ mod tests {
 
     #[test]
     fn test_fonts() {
-        let memory = Cpu::init();
+        let memory = Cpu::new();
 
         let exp_result = [
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -717,7 +671,7 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let mut display = Cpu::init();
+        let mut display = Cpu::new();
 
         let screen_copy: Vec<bool> = vec![false; 2048];
 
@@ -739,24 +693,24 @@ mod tests {
     #[test]
     fn test_00e0() {
         // CLS
-        let mut cpu = Cpu::init();
-        cpu.screen = vec![true; 64 * 32];
+        let mut cpu = Cpu::new();
+        cpu.screen = [true; 64 * 32];
 
         cpu.ram[0x200] = 0x00;
         cpu.ram[0x201] = 0xe0;
 
         let opcode = cpu.fetch();
         let ins = Instruction::decode(opcode).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
-        assert_eq!(cpu.screen, vec![false; 64 * 32]);
+        assert_eq!(cpu.screen, [false; 64 * 32]);
     }
 
     #[test]
     fn test_00ee() {
         // RET
         for stack_idx in 1..=15 {
-            let mut cpu = Cpu::init();
+            let mut cpu = Cpu::new();
             let ret_addr: u16 = 0x250;
             cpu.sp = stack_idx;
             cpu.stack[cpu.sp as usize] = ret_addr;
@@ -766,7 +720,7 @@ mod tests {
 
             let opcode = cpu.fetch();
             let ins = Instruction::decode(opcode).unwrap();
-            let _ = cpu.execute(ins);
+            let _ = cpu.exec(ins);
 
             assert_eq!(cpu.pc, ret_addr);
             assert_eq!(cpu.sp, stack_idx - 1);
@@ -776,7 +730,7 @@ mod tests {
     #[test]
     fn test_1nnn() {
         // JP addr
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let jp_addr: u16 = 0x250;
 
         let tmp = 0x1000 | jp_addr;
@@ -785,7 +739,7 @@ mod tests {
 
         let opcode = cpu.fetch();
         let ins = Instruction::decode(opcode).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, jp_addr);
     }
@@ -794,7 +748,7 @@ mod tests {
     fn test_2nnn() {
         // CALL addr
         for stack_idx in 0..=14 {
-            let mut cpu = Cpu::init();
+            let mut cpu = Cpu::new();
             let sr_addr: u16 = 0x250;
             cpu.sp = stack_idx;
 
@@ -804,7 +758,7 @@ mod tests {
 
             let opcode = cpu.fetch();
             let ins = Instruction::decode(opcode).unwrap();
-            let _ = cpu.execute(ins);
+            let _ = cpu.exec(ins);
 
             assert_eq!(cpu.stack[cpu.sp as usize], 0x202);
             assert_eq!(cpu.pc, 0x250);
@@ -815,7 +769,7 @@ mod tests {
     #[test]
     fn test_3xkk() {
         // SE x, kk
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let kk: u8 = 0x25;
         let x: u8 = 0x1;
         cpu.vx[x as usize] = kk;
@@ -826,7 +780,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -834,7 +788,7 @@ mod tests {
     #[test]
     fn test_4xkk() {
         // SNE x, kk
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let kk: u8 = 0x24;
         let x: u8 = 0x1;
         cpu.vx[x as usize] = kk + 1;
@@ -845,7 +799,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -853,7 +807,7 @@ mod tests {
     #[test]
     fn test_5xy0() {
         // SE x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let val: u8 = 0x25;
@@ -866,7 +820,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -874,7 +828,7 @@ mod tests {
     #[test]
     fn test_6xkk() {
         // LD x, kk
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let kk: u8 = 0x25;
 
@@ -884,7 +838,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], kk);
     }
@@ -892,7 +846,7 @@ mod tests {
     #[test]
     fn test_7xkk() {
         // ADD x, kk
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let kk: u8 = 0x25;
         let orig: u8 = 0x40;
@@ -904,7 +858,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], orig + kk);
     }
@@ -912,7 +866,7 @@ mod tests {
     #[test]
     fn test_8xy0() {
         // LD x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         cpu.vx[y as usize] = 0x25;
@@ -923,7 +877,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], cpu.vx[y as usize]);
     }
@@ -931,7 +885,7 @@ mod tests {
     #[test]
     fn test_8xy1() {
         // OR x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x25;
@@ -945,7 +899,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], x_val | y_val);
     }
@@ -953,7 +907,7 @@ mod tests {
     #[test]
     fn test_8xy2() {
         // AND x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x25;
@@ -967,7 +921,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], x_val & y_val);
     }
@@ -975,7 +929,7 @@ mod tests {
     #[test]
     fn test_8xy3() {
         // XOR x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x25;
@@ -989,7 +943,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], x_val ^ y_val);
     }
@@ -997,7 +951,7 @@ mod tests {
     #[test]
     fn test_8xy4() {
         // ADD x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x01;
@@ -1012,7 +966,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], sum as u8);
         assert_eq!(cpu.vx[0xF] == 1, (0xFF00 & sum) > 1);
@@ -1021,7 +975,7 @@ mod tests {
     #[test]
     fn test_8xy5() {
         // SUB x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x05;
@@ -1040,7 +994,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], diff as u8);
         assert_eq!(cpu.vx[0xF] == 1, x_val > y_val);
@@ -1049,7 +1003,7 @@ mod tests {
     #[test]
     fn test_8xy6() {
         // SHR x {, y}
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x4;
@@ -1061,7 +1015,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], x_val >> 1);
         assert_eq!(cpu.vx[0xF] == 1, x_val.trailing_ones() > 1);
@@ -1070,7 +1024,7 @@ mod tests {
     #[test]
     fn test_8xy7() {
         // SUBN x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0xFF;
@@ -1089,7 +1043,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], diff as u8);
         assert_eq!(cpu.vx[0xF] == 1, y_val > x_val);
@@ -1098,7 +1052,7 @@ mod tests {
     #[test]
     fn test_8xye() {
         // SHL x {, y}
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let x_val: u8 = 0x4;
@@ -1110,7 +1064,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], x_val << 1);
         assert_eq!(cpu.vx[0xF] == 1, x_val.leading_ones() > 1);
@@ -1119,7 +1073,7 @@ mod tests {
     #[test]
     fn test_9xy0() {
         // SNE x, y
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         let val: u8 = 0x25;
@@ -1132,7 +1086,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -1140,7 +1094,7 @@ mod tests {
     #[test]
     fn test_annn() {
         // LD I, addr
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let addr: u16 = 0x250;
 
         let tmp: u16 = 0xA000 | addr;
@@ -1149,7 +1103,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.ir, addr);
     }
@@ -1157,7 +1111,7 @@ mod tests {
     #[test]
     fn test_bnnn() {
         // JP V0, addr
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         cpu.vx[0x0] = 0x25;
         let addr: u16 = 0x250;
 
@@ -1167,7 +1121,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, (cpu.vx[0x0] as u16) + addr);
     }
@@ -1175,7 +1129,7 @@ mod tests {
     #[test]
     fn test_cxkk() {
         // RND x, kk
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0xF;
         let kk: u8 = 0xFF;
         let val: u8 = 0xF;
@@ -1187,7 +1141,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], 0);
     }
@@ -1195,7 +1149,7 @@ mod tests {
     #[test]
     fn test_dxyn() {
         // DRW x, y, n
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let y: u8 = 0xA;
         cpu.vx[x as usize] = 0x5;
@@ -1213,7 +1167,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[0xF], 1);
         assert_eq!(cpu.screen[0x20C], false);
@@ -1222,7 +1176,7 @@ mod tests {
     #[test]
     fn test_ex9e() {
         // SKP x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let key: u8 = 0x5;
         cpu.vx[x as usize] = key;
@@ -1234,7 +1188,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -1242,7 +1196,7 @@ mod tests {
     #[test]
     fn test_exa1() {
         // SKNP x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let key: u8 = 0x5;
         cpu.vx[x as usize] = key;
@@ -1254,7 +1208,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.pc, 0x204);
     }
@@ -1262,7 +1216,7 @@ mod tests {
     #[test]
     fn test_fx07() {
         // LD x, dt
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         cpu.dt = 0x25;
 
@@ -1272,7 +1226,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], cpu.dt);
     }
@@ -1280,7 +1234,7 @@ mod tests {
     #[test]
     fn test_fx0a() {
         // LD x, kp
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         let key: u8 = 0x5;
         cpu.kp[key as usize] = true;
@@ -1291,7 +1245,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], key);
     }
@@ -1299,7 +1253,7 @@ mod tests {
     #[test]
     fn test_fx15() {
         // LD dt, x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         cpu.dt = 0x25;
 
@@ -1309,7 +1263,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], cpu.dt);
     }
@@ -1317,7 +1271,7 @@ mod tests {
     #[test]
     fn test_fx18() {
         // LD st, x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         cpu.st = 0x25;
 
@@ -1327,7 +1281,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.vx[x as usize], cpu.st);
     }
@@ -1335,10 +1289,10 @@ mod tests {
     #[test]
     fn test_fx1e() {
         // ADD ir, x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
-        let initial_ir: u16 = 0xF01E;
-        cpu.ir = initial_ir;
+        let newial_ir: u16 = 0xF01E;
+        cpu.ir = newial_ir;
         cpu.vx[x as usize] = 0x25;
 
         let tmp: u16 = 0xF000 | ((x as u16) << 8) | 0x1E;
@@ -1347,15 +1301,15 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
-        assert_eq!(cpu.ir, (cpu.vx[x as usize] as u16) + initial_ir);
+        assert_eq!(cpu.ir, (cpu.vx[x as usize] as u16) + newial_ir);
     }
 
     #[test]
     fn test_fx29() {
         // LD F, vx
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         cpu.vx[x as usize] = 0x25;
 
@@ -1365,7 +1319,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.ir, (cpu.vx[x as usize] as u16) * 5);
     }
@@ -1373,7 +1327,7 @@ mod tests {
     #[test]
     fn test_fx33() {
         // LD B, x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x1;
         cpu.vx[x as usize] = 137;
         cpu.ir = 0x250;
@@ -1384,7 +1338,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(cpu.ram[cpu.ir as usize], 1);
         assert_eq!(cpu.ram[(cpu.ir + 1) as usize], 3);
@@ -1394,7 +1348,7 @@ mod tests {
     #[test]
     fn test_fx55() {
         // LD [ir], x
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x5;
         for i in 0..x {
             cpu.vx[i as usize] = i * 16;
@@ -1406,7 +1360,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(
             cpu.ram[(cpu.ir as usize)..=((cpu.ir + (x as u16)) as usize)],
@@ -1417,7 +1371,7 @@ mod tests {
     #[test]
     fn test_fx65() {
         // LD x, [ir]
-        let mut cpu = Cpu::init();
+        let mut cpu = Cpu::new();
         let x: u8 = 0x5;
         cpu.ir = 0x250;
         for i in 0..x {
@@ -1430,7 +1384,7 @@ mod tests {
 
         let instruction = cpu.fetch();
         let ins = Instruction::decode(instruction).unwrap();
-        let _ = cpu.execute(ins);
+        let _ = cpu.exec(ins);
 
         assert_eq!(
             cpu.ram[(cpu.ir as usize)..=((cpu.ir + (x as u16)) as usize)],

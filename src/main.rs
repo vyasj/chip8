@@ -1,3 +1,5 @@
+pub mod cpu;
+
 use muda::{Menu, MenuEvent, Submenu};
 use pixels::{Error, Pixels, SurfaceTexture};
 use tao::dpi::LogicalSize;
@@ -5,9 +7,9 @@ use tao::event::{ElementState, Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoop};
 use tao::keyboard::KeyCode;
 use tao::platform::unix::WindowExtUnix as _;
-use tao::window::{WindowBuilder};
+use tao::window::WindowBuilder;
 
-use chip8::cpu::{Cpu, Instruction};
+use cpu::{Cpu, Instruction, SCREEN_HEIGHT, SCREEN_WIDTH};
 
 use std::env;
 use std::sync::Arc;
@@ -19,7 +21,7 @@ fn main() -> Result<(), Error> {
         .expect("Expected a single command line argument");
 
     println!("Initializing CPU...");
-    let mut cpu = Cpu::init();
+    let mut cpu = Cpu::new();
 
     println!("Loading rom...");
     cpu.load_rom(&filename);
@@ -28,7 +30,7 @@ fn main() -> Result<(), Error> {
     println!("Rendering display window...");
     let event_loop = EventLoop::new();
     let window = {
-        let size = LogicalSize::new((cpu.width as f64)*5.0, (cpu.height as f64)*5.0);
+        let size = LogicalSize::new((SCREEN_WIDTH as f64) * 5.0, (SCREEN_HEIGHT as f64) * 5.0);
         let window = WindowBuilder::new()
             .with_title("CHIP-8 shenanigans")
             .with_inner_size(size)
@@ -42,7 +44,7 @@ fn main() -> Result<(), Error> {
         let window_size = window.inner_size();
         let surface_texture =
             SurfaceTexture::new(window_size.width, window_size.height, Arc::clone(&window));
-        Pixels::new(cpu.width as u32, cpu.height as u32, surface_texture)?
+        Pixels::new(SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32, surface_texture)?
     };
 
     let menu = Menu::new();
@@ -59,14 +61,14 @@ fn main() -> Result<(), Error> {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => {
-                    cpu.dump_state();
+                    // cpu.dump_state();
                     *control_flow = ControlFlow::Exit;
                 }
 
                 WindowEvent::KeyboardInput { event: inner, .. } => {
                     let key = inner.physical_key;
                     if key == KeyCode::Escape {
-                        cpu.dump_state();
+                        // cpu.dump_state();
                         *control_flow = ControlFlow::Exit;
                     } else {
                         let keycode = match key {
@@ -107,7 +109,7 @@ fn main() -> Result<(), Error> {
                 _ => {
                     // println!("{:?}", event);
                 }
-            }
+            },
 
             Event::MainEventsCleared => {
                 if cpu.pc as usize >= cpu.ram.len() {
@@ -126,18 +128,16 @@ fn main() -> Result<(), Error> {
 
                 let instruction = Instruction::decode(bytes).unwrap();
                 // println!("{}", instruction.to_string());
-                let result = cpu.execute(instruction);
+                cpu.exec(instruction);
 
-                if result.is_some() {
-                    match result.unwrap() {
-                        1 => window.request_redraw(),
-                        2 => *control_flow = ControlFlow::Wait,
-                        _ => {
-                            println!("unknown return value from cpu.execute(), aborting...");
-                            cpu.dump_state();
-                            std::process::exit(0x0100);
-                        }
-                    };
+                if cpu.should_draw {
+                    window.request_redraw();
+                    cpu.should_draw = false;
+                }
+
+                if cpu.waiting_for_key {
+                    *control_flow = ControlFlow::Wait;
+                    cpu.waiting_for_key = false;
                 }
 
                 if cpu.dt > 0 {
@@ -170,4 +170,3 @@ fn main() -> Result<(), Error> {
         }
     });
 }
-
